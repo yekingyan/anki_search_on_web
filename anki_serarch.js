@@ -230,13 +230,13 @@ const insertCards = (domsArray, targetDom) => {
   })
 }
 
-const getTittleFromFrontCard = (frontCard) => {
+const getTittleFromFrontCard = (index, frontCard) => {
   /**
    * 通过FrontCard生成简短的标题, 
    * 并根据标题重新定义frontCard
    */
   let title = ''
-  let parseTitle = frontCard.split('<div>')
+  let parseTitle = frontCard.split(/<div.*?>/)
   let blanckHead = parseTitle[0].split(/\s+/)
   //有div的情况
   if(frontCard.includes('</div>')) {
@@ -253,6 +253,7 @@ const getTittleFromFrontCard = (frontCard) => {
     let arrows = `<span style="padding-left: 4.5em">↓</span>`
     frontCard = arrows + arrows + arrows + arrows
   }
+  title = index + '、' + title
   return [frontCard, title]
 }
 
@@ -319,7 +320,7 @@ const resolveCars = (cards, targetDom) => {
   let id, title, frontCard, backCard, show, isFirst, itemDivs
   isFirst = true
   itemDivs = []
-  cards.forEach(item => {
+  cards.forEach((item, index) => {
     if (isFirst) {
       // 是否展开，展开第一个
       show = 'show'
@@ -331,7 +332,7 @@ const resolveCars = (cards, targetDom) => {
     id = item.noteId
     frontCard = item.fields.正面.value
     backCard = item.fields.背面.value
-    ;([frontCard, title] = getTittleFromFrontCard(frontCard))
+    ;([frontCard, title] = getTittleFromFrontCard(index+1, frontCard))
     
     let strDiv = templateItem(id, title, frontCard, backCard, show)
     let itemDiv = $.parseHTML(strDiv)
