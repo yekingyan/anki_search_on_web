@@ -1,11 +1,20 @@
+// AnkiConnect（插件：2055492159）的接口
 const local_url = 'http://127.0.0.1:8765'
 
+// 图片等资源的路径, 注意windows要将 反斜杠\ 换成 斜杠/
+// 需开启 web服务器
+const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
+
+// 依赖
 const requiredScript = `
   <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
   <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
   <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
   <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
 `
+
+const media_url = 'file:///' + media_path
+
 
 
 const getHostSearchInputAndTarget = () => {
@@ -47,6 +56,31 @@ const commonData = (action, params) => {
   }
 }
 
+
+const searchByFileName = (filename) => {
+  /**
+   * 搜索文件名 返回 资源的base64编码
+   * return base64 code
+   */
+
+  // gif 太大了，不要
+  if (filename.includes('.gif')) {
+    return
+  }
+
+  let data = commonData('retrieveMediaFile', {'filename': filename})
+  data = JSON.stringify(data)
+  const _searchByFileName = new Promise( (resolve, reject) => {
+    $.post(local_url, data)
+      .done((res) => {
+        resolve([filename, res.result])
+      })
+      .fail((err) => {
+        reject(err)
+      })
+  })
+  return _searchByFileName
+}
 
 const searchByTest =  (searchText, from='-deck:English') => {
   
@@ -131,6 +165,9 @@ function* next_id() {
 let count = next_id()
 let lastCount = next_id()
 
+let appendTimes = next_id()
+let callbackTimes = next_id()
+
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
     <div class="card border-success mb-1 rounded" style="max-width: 30rem;">
@@ -175,9 +212,18 @@ const insertCards = (domsArray, targetDom) => {
     // 多次搜索清空旧结果
     father.empty()
   }
+
   // 添加搜索结果到容器内
+  let str = ''
   domsArray.forEach(item => {
     father.append(item)
+
+    // 获取卡片的str， 用于更替src资源
+    str = $(item[1]).html()
+    collectSrc(str, (filename, data) => {
+      // dom 更替src属性
+      $(`img[src="${filename}"]`).attr('src', data)
+    })
   })
 }
 
@@ -205,6 +251,60 @@ const getTittleFromFrontCard = (frontCard) => {
     frontCard = arrows + arrows + arrows + arrows
   }
   return [frontCard, title]
+}
+
+
+const src_base64 = (base64) => {
+  let src = `
+    data:image/png;base64,${base64}
+  `
+  return src
+}
+
+
+
+const replaceDivSrc = (str, s_b_map) => {
+  /**
+   * 更替div中的src属性
+   */
+  let tempStr = str
+  for (let i of s_b_map) {
+    tempStr = tempStr.replace(i[0], i[i])
+  }
+  return tempStr
+}
+
+
+const collectSrc = (str, callback) => {
+  /**
+   * 将str资源文件名，提取出来, 并对应base64资源
+   * callback filename, base64
+   */
+  let src, base64, data
+
+  // 找出 src="**.jpg"
+  let re_src = /src="(.*?)"/gm
+  let srcsList = str.match(re_src)
+  
+  if (!srcsList) {
+    // 没有资源的卡片
+    return str
+  }
+
+  // 找出**.jpg
+  let filename
+  srcsList.forEach(item => {
+    filename = item.split('"')[1].split('"')[0]
+    // 查文件询名对应的资源
+    searchByFileName(filename).then(results => {
+      // src -> data
+      base64 = results[1]
+      data = src_base64(base64)
+      // data replace src
+      callback(results[0], data)
+      
+    })
+  })
 }
 
 
@@ -250,7 +350,6 @@ $(document).ready(() => {
   }
 
   search(true, searchInput, (cards) => {
-    console.log('init request', count.next() ,cards)
     resolveCars(cards, targetDom)
   })
   
@@ -271,7 +370,7 @@ $(document).ready(() => {
         if (lastTime-eventTime > 1000) {
           // 1秒内没有新的事件触发，必发一次结合请求
           search(canRequest, searchInput, (cards) => {
-            console.log('last request', lastCount.next() ,cards)
+            console.log('last request', searchInput.val(), lastCount.next() ,cards)
             resolveCars(cards, targetDom)
           })
         }
@@ -297,4 +396,4 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 布局，图片
+// TODO: 布局，图片大小
