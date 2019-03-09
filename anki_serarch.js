@@ -1,14 +1,23 @@
 const local_url = 'http://127.0.0.1:8765'
 
+const requiredScript = `
+  <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+  <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+  <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+`
 
-const getHostSearchInput = () => {
+
+const getHostSearchInputAndTarget = () => {
   /**
-   * 获取当前网站的搜索输入框
+   * 获取当前网站的搜索输入框 与 需要插入的位置
    *  */
   let host = window.location.host
   let searchInput = undefined
+  let targetDom = undefined
   if (host.includes('google')) {
     searchInput = $('.gLFyf')
+    targetDom = $('#rhs_block')
   } else if (host.includes('bing')) {
     searchInput = $('.b_searchbox')
   } else if (host.includes('baidu')) {
@@ -17,7 +26,7 @@ const getHostSearchInput = () => {
     searchInput = $('#yschsp')
   }
 
-  return searchInput
+  return [searchInput, targetDom]
 }
 
 const commonData = (action, params) => {
@@ -115,11 +124,35 @@ function* next_id() {
   }
 }
 
-const resolveCars = (cards) => {
+let templateItem = (id, title, frontCard, backCard, show='show')=> {
+  let template = `
+    <div class="card border-success mb-1 rounded" style="max-width: 30rem;">
+      <div class="card-header bg-transparent border-primary 
+      collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
+      ${title}
+      </div>
+
+      <div class="collapse ${show}"  id="collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
+        <div class="card-body text-success" >${frontCard}</div>
+        <div class="card-footer bg-transparent border-success">${backCard}</div>
+      </div>
+
+    </div>
+  `
+  return template
+}
+
+const container =  `<div id="accordionCard"><div>`
+
+
+
+
+const resolveCars = (cards, targetDom) => {
   /**
    * 处理卡片信息
    * cards: array
    *  */ 
+  let id, title, frontCard, backCard, show
   cards.foreach(item => {
 
   })
@@ -128,7 +161,13 @@ const resolveCars = (cards) => {
 
 $(document).ready(() => {
   // 获取输入框 与 搜索值
-  let searchInput = getHostSearchInput()
+  let [searchInput, targetDom] = getHostSearchInputAndTarget()
+
+  // 注入脚本
+  if (searchInput) {
+    let html = $.parseHTML(requiredScript,document,true )
+    $('body').append(html)
+  }
 
   search(true, searchInput, (cards) => {
     console.log('last request', lastCount.next() ,cards)
@@ -136,6 +175,7 @@ $(document).ready(() => {
   
   let count = next_id()
   let lastCount = next_id()
+
   // 用于控制是否请求
   let canRequest = false
 
@@ -154,6 +194,7 @@ $(document).ready(() => {
           // 1秒内没有新的事件触发，必发一次结合请求
           search(canRequest, searchInput, (cards) => {
             console.log('last request', lastCount.next() ,cards)
+            resolveCars(cards, targetDom)
           })
         }
       },1500)
