@@ -29,6 +29,10 @@ const getHostSearchInputAndTarget = () => {
   return [searchInput, targetDom]
 }
 
+const mylog = function () {
+  console.log.apply(console, arguments)
+}
+
 const commonData = (action, params) => {
   /**
    * 请求的共同数据结构
@@ -150,9 +154,14 @@ let templateItem = (id, title, frontCard, backCard, show='show')=> {
 const container = `<div id="accordionCard"><div>`
 
 const insertCards = (domsArray, targetDom) => {
-  // targetDom[0].before(itemDiv[1])
+  /**
+   * 将节点插入到页面中
+   * domsArray: array dom节点列表
+   * targetDom： 要在页面中依附的元素
+   */
+
   if(!targetDom[0]) {
-    console.log('在页面没找到可依付的元素')
+    console.log('在页面没找到可依附的元素')
     return
   }
 
@@ -172,17 +181,41 @@ const insertCards = (domsArray, targetDom) => {
   })
 }
 
+const getTittleFromFrontCard = (frontCard) => {
+  /**
+   * 通过FrontCard生成简短的标题, 
+   * 并根据标题重新定义frontCard
+   */
+  let title = ''
+  let parseTitle = frontCard.split('<div>')
+  let blanckHead = parseTitle[0].split(/\s+/)
+  //有div的情况
+  if(frontCard.includes('</div>')) {
+    // 第一个div之前不是全部都是空白，就是标题
+    if (!/^\s+$/.test(blanckHead[0]) && blanckHead[0] !== '') {
+      title = blanckHead
+    } else {
+      // 标题是第一个div标签的内容
+      title = parseTitle[1].split('</div>')[0]
+    }
+  } else {
+    //没有div的情况
+    title = frontCard
+    let arrows = `<span style="padding-left: 4.5em">↓</span>`
+    frontCard = arrows + arrows + arrows + arrows
+  }
+  return [frontCard, title]
+}
+
 
 const resolveCars = (cards, targetDom) => {
   /**
    * 处理卡片信息
    * cards: array
    *  */ 
-  console.log('resolveCars')
   let id, title, frontCard, backCard, show, isFirst, itemDivs
   isFirst = true
   itemDivs = []
-  let frontCards = []
   cards.forEach(item => {
     if (isFirst) {
       // 是否展开，展开第一个
@@ -195,41 +228,16 @@ const resolveCars = (cards, targetDom) => {
     id = item.noteId
     frontCard = item.fields.正面.value
     backCard = item.fields.背面.value
-
-    frontCards.push(frontCard)
-    console.log('0', frontCard)
-    let parseTitle = frontCard.split('<div>')
-    console.log('1', parseTitle)
-    let blanckHead = parseTitle[0].split(/\s+/)
-    console.log('2', blanckHead)
-    
-
-    //有div的情况
-    if(frontCard.includes('</div>')) {
-      // 第一个div之前不是全部都是空白，就是标题
-      if (!/^\s+$/.test(blanckHead[0]) && blanckHead[0] !== '') {
-        title = blanckHead
-      } else {
-        // 标题是第一个div标签的内容
-        title = parseTitle[1].split('</div>')[0]
-      }
-    } else {
-      //没有div的情况
-      title = frontCard
-      let arrows = `<span style="padding-left: 4.5em">↓</span>`
-      frontCard = arrows + arrows + arrows + arrows
-    }
-    
+    ;([frontCard, title] = getTittleFromFrontCard(frontCard))
     
     let strDiv = templateItem(id, title, frontCard, backCard, show)
     let itemDiv = $.parseHTML(strDiv)
     itemDivs.push(itemDiv)
   })
-  console.log('resolveCars end', itemDivs, frontCards)
   // 处理收集的itemDivs，插入到页面中
   insertCards(itemDivs, targetDom)
-
 }
+
 
 $(document).ready(() => {
   // 获取输入框 与 搜索值
@@ -288,3 +296,5 @@ const test = (condition, e) => {
     console.log(e)
   }
 }
+
+// TODO: 布局，图片
