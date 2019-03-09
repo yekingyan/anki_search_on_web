@@ -1,3 +1,30 @@
+// ==UserScript==
+// @name         Anki_Search
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  同步搜索Anki上的内容，目前只支持google。依赖AnkiConnect（插件：2055492159）
+// @author       Yekingyan
+// @run-at       document-start
+// @require      https://code.jquery.com/jquery-3.3.1.min.js
+// @require      https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js
+// @require      https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js
+// @include      https://www.google.com/*
+// @include      todohttps://www.bing.com/*
+// @include      todohttp://www.bing.com/*
+// @include      todohttps://cn.bing.com/*
+// @include      todohttps://www.baidu.com/*
+// @include      todohttp://www.baidu.com/*
+// @include      todohttps://search.yahoo.com/*
+// @include      todohttp://search.yahoo.com/*
+// @grant        unsafeWindow
+// ==/UserScript==
+
+(function() {
+  'use strict';
+  // Your code here...
+
+//---------------------------------------------------------------------------------
+
 // AnkiConnect（插件：2055492159）的接口
 const local_url = 'http://127.0.0.1:8765'
 
@@ -417,3 +444,6 @@ const test = (condition, e) => {
 }
 
 // TODO: 布局，图片大小
+//-----------------------------------------------------------------------
+
+})();
