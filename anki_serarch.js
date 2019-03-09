@@ -64,9 +64,9 @@ const searchByFileName = (filename) => {
    */
 
   // gif 太大了，不要
-  if (filename.includes('.gif')) {
-    return
-  }
+  // if (filename.includes('.gif')) {
+  //   return
+  // }
 
   let data = commonData('retrieveMediaFile', {'filename': filename})
   data = JSON.stringify(data)
@@ -214,15 +214,18 @@ const insertCards = (domsArray, targetDom) => {
   }
 
   // 添加搜索结果到容器内
-  let str = ''
+  let str, imageDom
   domsArray.forEach(item => {
     father.append(item)
 
     // 获取卡片的str， 用于更替src资源
     str = $(item[1]).html()
     collectSrc(str, (filename, data) => {
+      imageDom = $(`img[src="${filename}"]`)
       // dom 更替src属性
-      $(`img[src="${filename}"]`).attr('src', data)
+      imageDom.attr('src', data)
+      //样式 限制图片大小
+      imageDom.attr('style', 'max-height: 450px;')
     })
   })
 }
