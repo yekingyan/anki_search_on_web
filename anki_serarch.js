@@ -124,10 +124,13 @@ function* next_id() {
   }
 }
 
+let count = next_id()
+let lastCount = next_id()
+
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
     <div class="card border-success mb-1 rounded" style="max-width: 30rem;">
-      <div class="card-header bg-transparent border-primary 
+      <div class="card-header bg-transparent border-primary font-weight-bold
       collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
       ${title}
       </div>
@@ -142,9 +145,32 @@ let templateItem = (id, title, frontCard, backCard, show='show')=> {
   return template
 }
 
-const container =  `<div id="accordionCard"><div>`
 
 
+const container = `<div id="accordionCard"><div>`
+
+const insertCards = (domsArray, targetDom) => {
+  // targetDom[0].before(itemDiv[1])
+  if(!targetDom[0]) {
+    console.log('在页面没找到可依付的元素')
+    return
+  }
+
+  // 加入容器到页面
+  let containerDiv = $.parseHTML(container)
+  let father = $('#accordionCard')
+  if (!Object.keys(father).length) {
+    targetDom[0].before(containerDiv[0])
+    father = $('#accordionCard')
+  } else {
+    // 多次搜索清空旧结果
+    father.empty()
+  }
+  // 添加搜索结果到容器内
+  domsArray.forEach(item => {
+    father.append(item)
+  })
+}
 
 
 const resolveCars = (cards, targetDom) => {
@@ -152,10 +178,56 @@ const resolveCars = (cards, targetDom) => {
    * 处理卡片信息
    * cards: array
    *  */ 
-  let id, title, frontCard, backCard, show
-  cards.foreach(item => {
+  console.log('resolveCars')
+  let id, title, frontCard, backCard, show, isFirst, itemDivs
+  isFirst = true
+  itemDivs = []
+  let frontCards = []
+  cards.forEach(item => {
+    if (isFirst) {
+      // 是否展开，展开第一个
+      show = 'show'
+      isFirst = false
+    } else {
+      show = ''
+    }
 
+    id = item.noteId
+    frontCard = item.fields.正面.value
+    backCard = item.fields.背面.value
+
+    frontCards.push(frontCard)
+    console.log('0', frontCard)
+    let parseTitle = frontCard.split('<div>')
+    console.log('1', parseTitle)
+    let blanckHead = parseTitle[0].split(/\s+/)
+    console.log('2', blanckHead)
+    
+
+    //有div的情况
+    if(frontCard.includes('</div>')) {
+      // 第一个div之前不是全部都是空白，就是标题
+      if (!/^\s+$/.test(blanckHead[0]) && blanckHead[0] !== '') {
+        title = blanckHead
+      } else {
+        // 标题是第一个div标签的内容
+        title = parseTitle[1].split('</div>')[0]
+      }
+    } else {
+      //没有div的情况
+      title = frontCard
+      let arrows = `<span style="padding-left: 4.5em">↓</span>`
+      frontCard = arrows + arrows + arrows + arrows
+    }
+    
+    
+    let strDiv = templateItem(id, title, frontCard, backCard, show)
+    let itemDiv = $.parseHTML(strDiv)
+    itemDivs.push(itemDiv)
   })
+  console.log('resolveCars end', itemDivs, frontCards)
+  // 处理收集的itemDivs，插入到页面中
+  insertCards(itemDivs, targetDom)
 
 }
 
@@ -170,12 +242,10 @@ $(document).ready(() => {
   }
 
   search(true, searchInput, (cards) => {
-    console.log('last request', lastCount.next() ,cards)
+    console.log('init request', count.next() ,cards)
+    resolveCars(cards, targetDom)
   })
   
-  let count = next_id()
-  let lastCount = next_id()
-
   // 用于控制是否请求
   let canRequest = false
 
@@ -212,3 +282,9 @@ $(document).ready(() => {
  * <iframe src="chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/SimSearchFrame.html" id="simSearchFrame" style="width: 454px; height: 265px; border: none;"></iframe>
  * 
  */
+
+const test = (condition, e) => {
+  if(!condition) {
+    console.log(e)
+  }
+}
