@@ -15,7 +15,7 @@ const requiredScript = `
 
 const media_url = 'file:///' + media_path
 
-
+let WHERE = ''
 
 const getHostSearchInputAndTarget = () => {
   /**
@@ -25,13 +25,19 @@ const getHostSearchInputAndTarget = () => {
   let searchInput = undefined
   let targetDom = undefined
   if (host.includes('google')) {
+    WHERE = 'google'
     searchInput = $('.gLFyf')
     targetDom = $('#rhs_block')
   } else if (host.includes('bing')) {
+    WHERE = 'bing'
     searchInput = $('.b_searchbox')
+    targetDom = $('#b_context')
   } else if (host.includes('baidu')) {
+    WHERE = 'baidu'
     searchInput = $('#kw')
+    targetDom = $('#content_right')
   } else if (host.includes('yahoo')) {
+    WHERE = 'baidu'
     searchInput = $('#yschsp')
   }
 
@@ -204,9 +210,19 @@ const insertCards = (domsArray, targetDom) => {
 
   // 加入容器到页面
   let containerDiv = $.parseHTML(container)
+
   let father = $('#accordionCard')
   if (!Object.keys(father).length) {
-    targetDom[0].before(containerDiv[0])
+    // 根据不同网站加入容器
+    switch (WHERE) {
+      case 'google': targetDom[0].before(containerDiv[0])
+      break
+      case 'bing': targetDom[0].prepend(containerDiv[0])
+      break
+      case 'baidu': targetDom[0].prepend(containerDiv[0])
+      break
+    }
+
     father = $('#accordionCard')
   } else {
     // 多次搜索清空旧结果
