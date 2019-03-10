@@ -18,17 +18,22 @@
 // ==/UserScript==
 
 (function() {
-  'use strict';
-  // Your code here...
-
+  'use strict'
 //---------------------------------------------------------------------------------
 
 // AnkiConnect（插件：2055492159）的接口
 const local_url = 'http://127.0.0.1:8765'
 
-// 图片等资源的路径, 注意windows要将 反斜杠\ 换成 斜杠/
-// 需开启 web服务器
-const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
+// 搜索范围设置
+// 只搜English牌组，'deck:English'
+// 排除English牌组，'-deck:English'
+const SEARCH_FROM = ''
+
+// 卡页类型，正反面的名称
+// 默认supermemo不用设置
+// 目前只持支取两个字段
+const FRONT_CARCD_FILES = ''
+const BACK_CARK_FILES = ''
 
 // 依赖
 const requiredScript = `
@@ -130,7 +135,10 @@ element.style {
 </style>
 `
 
-const media_url = 'file:///' + media_path
+// 图片等资源的路径, 注意windows要将 反斜杠\ 换成 斜杠/
+// 需开启 web服务器
+// const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
+// const media_url = 'file:///' + media_path
 
 let WHERE = ''
 
@@ -205,7 +213,7 @@ const searchByFileName = (filename) => {
   return _searchByFileName
 }
 
-const searchByTest =  (searchText, from='-deck:English') => {
+const searchByTest =  (searchText) => {
   
     /**
      * 搜索文字返回含卡片ID的数组
@@ -213,6 +221,10 @@ const searchByTest =  (searchText, from='-deck:English') => {
      * from:    str 搜索特定的牌组
      * callback:   array noteIds
      */
+    let from='-deck:English'
+    if(SEARCH_FROM) {
+      from = SEARCH_FROM
+    }
     let query = `${from} ${searchText}`
     let data = commonData('findNotes', {'query': query})
     data = JSON.stringify(data)
@@ -463,7 +475,10 @@ const resolveCars = (cards, targetDom) => {
    * 处理卡片信息
    * cards: array
    *  */ 
-  let id, title, frontCard, backCard, show, isFirst, itemDivs
+  let id, title, frontCard, backCard, show, isFirst, itemDivs, fileds_f, fileds_b
+  FRONT_CARCD_FILES ? fileds_f = FRONT_CARCD_FILES : fileds_f = '正面'
+  BACK_CARK_FILES ? fileds_b = BACK_CARK_FILES : fileds_b = '背面'
+  
   isFirst = true
   itemDivs = []
   cards.forEach((item, index) => {
@@ -476,8 +491,8 @@ const resolveCars = (cards, targetDom) => {
     }
 
     id = item.noteId
-    frontCard = item.fields.正面.value
-    backCard = item.fields.背面.value
+    frontCard = item.fields[fileds_f]['value']
+    backCard = item.fields[fileds_b]['value']
     ;([frontCard, title] = getTittleFromFrontCard(index+1, frontCard))
     
     let strDiv = templateItem(id, title, frontCard, backCard, show)
