@@ -147,7 +147,7 @@ const getHostSearchInputAndTarget = () => {
     targetDom = $('#rhs_block')
   } else if (host.includes('bing')) {
     WHERE = 'bing'
-    searchInput = $('.b_searchbox')
+    searchInput = $('#sb_form_q')
     targetDom = $('#b_context')
   } else if (host.includes('baidu')) {
     WHERE = 'baidu'
@@ -476,10 +476,15 @@ const resolveCars = (cards, targetDom) => {
   insertCards(itemDivs, targetDom)
 }
 
+// 记录最后一次显示或隐藏的卡片
+let lastClick
 
 $(document).ready(() => {
+
   // 获取输入框 与 搜索值
   let [searchInput, targetDom] = getHostSearchInputAndTarget()
+
+  console.log(searchInput)
 
   // 终止搜索
   if (!searchInput[0]) {
@@ -505,11 +510,11 @@ $(document).ready(() => {
     resolveCars(cards, targetDom)
   })
   
-  // 用于控制是否请求
-  let canRequest = false
+
   // 监听输入框的搜索事件
+  let canRequest = false  // 用于控制是否请求
   if (searchInput) {
-    searchInput.on('keyup', () => {
+    searchInput.on('input', () => {
       // search from ANKI
       let eventTime = Date.parse(new Date())
       // 减少请求次数
@@ -528,7 +533,38 @@ $(document).ready(() => {
     })
   }
 
+  // 控制卡片风手琴
+  $('#accordionCard').on('click', '.collapsed', function (event) {
+    let cardTitle = $(event.target)
+    let targetId = cardTitle.data('target')
+    let targetCard = $(targetId)
+    
+    // 目标元素的显示与隐藏
+    if (targetCard.hasClass('show')) {
+      // 如果有 show的class 则去掉并隐藏
+      targetCard.hide()
+    } else {
+      // 如果没有 show的class，则加上，并显示
+      targetCard.show()
+    }
+    targetCard.toggleClass('show')
 
+    // 上一个元素的显示与隐藏
+    mylog('lastClick', lastClick)
+    if (lastClick) {
+      // 如果有 show的class 则去掉并隐藏
+      lastClick.hide()
+      lastClick.removeClass('show')
+    }
+    
+    // 如果目标卡片是打开状态，标志
+    if (targetCard.hasClass('show')) {
+      lastClick = targetCard
+    }
+
+    mylog('target', targetCard)
+    
+})
 
 })
 
