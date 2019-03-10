@@ -9,7 +9,7 @@
 // @include      https://www.google.com/*
 // @include      todohttps://www.bing.com/*
 // @include      todohttp://www.bing.com/*
-// @include      todohttps://cn.bing.com/*
+// @include      https://cn.bing.com/*
 // @include      todohttps://www.baidu.com/*
 // @include      todohttp://www.baidu.com/*
 // @include      todohttps://search.yahoo.com/*
@@ -99,8 +99,8 @@ element.style {
     border-bottom: solid 1px;
 }
 
-*, ::after, ::before {
-    box-sizing: border-box;
+// *, ::after, ::before {
+//     box-sizing: border-box;
 
 
 /*card footer*/
@@ -124,9 +124,9 @@ element.style {
   margin-top: 10px;
 }
 
-*, ::after, ::before {
-    box-sizing: border-box;
-}
+// *, ::after, ::before {
+//     box-sizing: border-box;
+// }
 </style>
 `
 
@@ -310,24 +310,14 @@ let templateItem = (id, title, frontCard, backCard, show='show')=> {
 }
 
 
-
+// 容器
 const container = `<div id="accordionCard"><div>`
 
-const insertCards = (domsArray, targetDom) => {
+const insertContainet = (targetDom) => {
   /**
-   * 将节点插入到页面中
-   * domsArray: array dom节点列表
-   * targetDom： 要在页面中依附的元素
-   */
-
-  if(!targetDom[0]) {
-    console.log('在页面没找到可依附的元素')
-    return
-  }
-
-  // 加入容器到页面
+   *  插入容器到页面
+   *  */
   let containerDiv = $.parseHTML(container)
-
   let father = $('#accordionCard')
   if (!Object.keys(father).length) {
     // 根据不同网站加入容器
@@ -339,10 +329,21 @@ const insertCards = (domsArray, targetDom) => {
       case 'baidu': targetDom[0].prepend(containerDiv[0])
       break
     }
+  }
+}
 
-    father = $('#accordionCard')
-  } else {
-    // 多次搜索清空旧结果
+const insertCards = (domsArray, targetDom) => {
+  /**
+   * 将节点插入到页面中
+   * domsArray: array dom节点列表
+   * targetDom： 要在页面中依附的元素
+   */
+
+
+
+  // 多次搜索清空旧结果
+  let father = $('#accordionCard')
+  if (Object.keys(father).length) {
     father.empty()
   }
 
@@ -480,26 +481,37 @@ $(document).ready(() => {
   // 获取输入框 与 搜索值
   let [searchInput, targetDom] = getHostSearchInputAndTarget()
 
-  // 注入脚本
-  if (searchInput) {
-    let html = $.parseHTML(requiredScript,document,true )
-    $('body').append(html)
+  // 终止搜索
+  if (!searchInput[0]) {
+    console.log('在页面没有找到搜索框')
+    return
+  }
+  if(!targetDom[0]) {
+    console.log('在页面没有找到可依附的元素')
+    return
   }
 
+
+  // 注入脚本
+  let html = $.parseHTML(requiredScript,document, true)
+  $('body').append(html)
+
+  // 插入容器到页面
+  insertContainet(targetDom)
+
+
+  // 刷新，搜索一次
   search(true, searchInput, (cards) => {
     resolveCars(cards, targetDom)
   })
   
   // 用于控制是否请求
   let canRequest = false
-
-  // 监听事件
+  // 监听输入框的搜索事件
   if (searchInput) {
     searchInput.on('keyup', () => {
       // search from ANKI
-
       let eventTime = Date.parse(new Date())
-
       // 减少请求次数
       setTimeout(() => {
         canRequest = !canRequest
@@ -515,6 +527,8 @@ $(document).ready(() => {
 
     })
   }
+
+
 
 })
 
