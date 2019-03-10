@@ -567,13 +567,13 @@ $(document).ready(() => {
     let collapse = $(targetId)
     
     //目标元素的显示与隐藏
-    collapse.toggle()
+    collapse.toggle(500)
     collapse.toggleClass('show')
 
     // 上一个元素的隐藏，如果是自身则不操作
     if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
       // 如果有 show的class 则去掉并隐藏
-      lastClick.hide()
+      lastClick.hide(500)
       lastClick.removeClass('show')
     }
     
