@@ -7,13 +7,10 @@
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
 // @include      https://www.google.com/*
-// @include      todohttps://www.bing.com/*
-// @include      todohttp://www.bing.com/*
+// @include      https://www.bing.com/*
+// @include      http://www.bing.com/*
 // @include      https://cn.bing.com/*
-// @include      todohttps://www.baidu.com/*
-// @include      todohttp://www.baidu.com/*
-// @include      todohttps://search.yahoo.com/*
-// @include      todohttp://search.yahoo.com/*
+// @include      https://search.yahoo.com/*
 // @grant        unsafeWindow
 // ==/UserScript==
 
@@ -40,27 +37,26 @@ const requiredScript = `
   <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
   <style>
 
-/*card*/
+  /*card*/
 
-.mb-1 {
+  .anki-mb-1 {
     margin-bottom: .25rem!important;
-}
+  }
 
-element.style {
-    max-width: 30rem;
-}
-.mb-1, .my-1 {
+  .anki-mb-1, .my-1 {
     margin-bottom: .25rem!important;
-}
-.rounded {
+  }
+  .anki-rounded {
     border-radius: .25rem!important;
-}
+  }
 
-.border-success {
+  /*
+  .anki-border-success {
     border-color: #dfe1e5!important;
-}
+  }
+  */
 
-.card {
+  .anki-card {
     position: relative;
     display: -ms-flexbox;
     display: flex;
@@ -72,67 +68,55 @@ element.style {
     background-clip: border-box;
     border: 1.5px solid #dfe1e5;
     border-radius: .25rem;
-}
+  }
 
-/* cardheader */
-.card-header:first-child {
+  /* cardheader */
+  .anki-card-header:first-child {
     border-radius: calc(.25rem - 1px) calc(.25rem - 1px) 0 0;
-}
-.font-weight-bold {
+  }
+  .anki-font-weight-bold {
     font-weight: 700!important;
-}
+  }
 
-.bg-title {
+  .bg-title {
   background-color: #c6e1e4!important;
-}
+  }
 
-.card-header {
+  .anki-card-header {
     padding: .75rem 1.25rem;
     margin-bottom: 0;
     background-color: rgba(0,0,0,.03);
     border-bottom: 1px solid rgba(0,0,0,.125);
-}
+  }
 
-/*card body*/
-.text-success {
+  /*card body*/
+  .text-success {
     color: #28a745!important;
-}
-.card-body {
+  }
+  .anki-card-body {
     -ms-flex: 1 1 auto;
     flex: 1 1 auto;
     padding: .75rem 1.25rem;
     border-bottom: solid 1px;
-}
-
-// *, ::after, ::before {
-//     box-sizing: border-box;
+  }
 
 
-/*card footer*/
-.card-footer:last-child {
+  /*card footer*/
+  .card-footer:last-child {
     border-radius: 0 0 calc(.25rem - 1px) calc(.25rem - 1px);
-}
+  }
 
-.border-success {
-    border-color: #28a745!important;
-}
-.bg-transparent {
+  .anki-bg-transparent {
     background-color: transparent!important;
-}
-.card-footer {
+  }
+
+  .anki-card-footer {
     padding: .75rem 1.25rem;
     background-color: rgba(0,0,0,.03);
     border-top: 1px solid rgba(0,0,0,.125);
-}
+  }
 
-.card-footer.bg-transparent.border-success {
-  margin-top: 10px;
-}
-
-// *, ::after, ::before {
-//     box-sizing: border-box;
-// }
-</style>
+  </style>
 `
 
 // 图片等资源的路径, 注意windows要将 反斜杠\ 换成 斜杠/
@@ -152,7 +136,7 @@ const getHostSearchInputAndTarget = () => {
   if (host.includes('google')) {
     WHERE = 'google'
     searchInput = $('.gLFyf')
-    targetDom = $('#rhs_block')
+    targetDom = $('#rhs')
   } else if (host.includes('bing')) {
     WHERE = 'bing'
     searchInput = $('#sb_form_q')
@@ -162,8 +146,9 @@ const getHostSearchInputAndTarget = () => {
     searchInput = $('#kw')
     targetDom = $('#content_right')
   } else if (host.includes('yahoo')) {
-    WHERE = 'baidu'
+    WHERE = 'yahoo'
     searchInput = $('#yschsp')
+    targetDom = $('#right')
   }
 
   return [searchInput, targetDom]
@@ -309,21 +294,21 @@ let callbackTimes = next_id()
 
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
-    <div class="card border-success mb-1 rounded" style="max-width: 40rem;">
-      <div class="card-header bg-title font-weight-bold
+    <div class="anki-card anki-border-success anki-mb-1 anki-rounded" style="min-width: 35rem; max-width: 50rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;">
+      <div class="anki-card-header bg-title anki-font-weight-bold
       collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
       ${title}
       </div>
 
       <div class="collapse ${show}"  id="collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
-        <div class="card-body text-success border-success" >${frontCard}</div>
-        <div class="card-footer bg-transparent border-success">${backCard}</div>
+        <div class="anki-card-body text-success anki-border-success" >${frontCard}</div>
+        <div class="anki-card-footer anki-bg-transparent anki-border-success">${backCard}</div>
       </div>
 
     </div>
-  `
-  return template
-}
+    `
+    return template
+  }
 
 
 // 容器
@@ -337,14 +322,15 @@ const insertContainet = (targetDom) => {
   let father = $('#accordionCard')
   if (!Object.keys(father).length) {
     // 根据不同网站加入容器
-    switch (WHERE) {
-      case 'google': targetDom[0].before(containerDiv[0])
-      break
-      case 'bing': targetDom[0].prepend(containerDiv[0])
-      break
-      case 'baidu': targetDom[0].prepend(containerDiv[0])
-      break
-    }
+    targetDom[0].prepend(containerDiv[0])
+    // switch (WHERE) {
+    //   case 'google': targetDom[0].prepend(containerDiv[0])
+    //   break
+    //   case 'bing': targetDom[0].prepend(containerDiv[0])
+    //   break
+    //   case 'baidu': targetDom[0].prepend(containerDiv[0])
+    //   break
+    // }
   }
 }
 
@@ -367,6 +353,13 @@ const insertCards = (domsArray) => {
   let str, imageDom
   domsArray.forEach((item, index) => {
     father.append(item)
+    
+    switch(WHERE){
+      // case 'google': $(item).attr('style', 'min-width: 40rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
+      case 'bing': $(item).attr('style', 'min-width: 28rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
+      // default: $(item).attr('style', 'min-width: 26rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
+    }
+    
 
     // 卡片加入时只显示标题
      let collapse = $(item).find('.collapse')
@@ -504,21 +497,18 @@ const resolveCars = (cards, targetDom) => {
 }
 
 // 记录最后一次显示或隐藏的卡片
-let lastClick
-
+let lastClick, searchInput, targetDom
 $(document).ready(() => {
 
   // 获取输入框 与 搜索值
-  let [searchInput, targetDom] = getHostSearchInputAndTarget()
+  ;([searchInput, targetDom] = getHostSearchInputAndTarget())
 
   // 终止搜索
   if (!searchInput[0]) {
     console.log('在页面没有找到搜索框')
-    return
   }
   if(!targetDom[0]) {
     console.log('在页面没有找到可依附的元素', targetDom)
-    return
   }
 
 
