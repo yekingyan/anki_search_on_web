@@ -332,7 +332,7 @@ const insertContainet = (targetDom) => {
   }
 }
 
-const insertCards = (domsArray, targetDom) => {
+const insertCards = (domsArray) => {
   /**
    * 将节点插入到页面中
    * domsArray: array dom节点列表
@@ -481,7 +481,7 @@ const resolveCars = (cards, targetDom) => {
     itemDivs.push(itemDiv)
   })
   // 处理收集的itemDivs，插入到页面中
-  insertCards(itemDivs, targetDom)
+  insertCards(itemDivs)
 }
 
 // 记录最后一次显示或隐藏的卡片
@@ -491,8 +491,6 @@ $(document).ready(() => {
 
   // 获取输入框 与 搜索值
   let [searchInput, targetDom] = getHostSearchInputAndTarget()
-
-  console.log(searchInput)
 
   // 终止搜索
   if (!searchInput[0]) {
@@ -515,30 +513,47 @@ $(document).ready(() => {
 
   // 刷新，搜索一次
   search(true, searchInput, (cards) => {
-    resolveCars(cards, targetDom)
+    resolveCars(cards)
   })
   
 
   // 监听输入框的搜索事件
   let canRequest = false  // 用于控制是否请求
+  let lastSearchText = '' // 最新一次请求的搜索的参数
   if (searchInput) {
-    searchInput.on('input', () => {
+    searchInput.on({
+
+      // 有输入行为
+      input: function() {
       // search from ANKI
-      let eventTime = Date.parse(new Date())
-      // 减少请求次数
-      setTimeout(() => {
-        canRequest = !canRequest
-        let lastTime = Date.parse(new Date())
-        if (lastTime-eventTime > 1000) {
-          // 1秒内没有新的事件触发，必发一次结合请求
-          search(canRequest, searchInput, (cards) => {
-            console.log('last request', searchInput.val(), lastCount.next() ,cards)
-            resolveCars(cards, targetDom)
+        let eventTime = Date.parse(new Date())
+        // 减少请求次数
+        if (lastSearchText !== searchInput.val()) {
+          // 相同的内容就不请求了
+          setTimeout(() => {
+            canRequest = !canRequest
+            let lastTime = Date.parse(new Date())
+            if (lastTime-eventTime > 1000) {
+              // 1秒内没有新的事件触发，必发一次结合请求
+              lastSearchText = searchInput.val()
+              search(canRequest, searchInput, (cards) => {
+                console.log('inputEven request', searchInput.val(), lastCount.next() ,cards)
+                resolveCars(cards)
+              })
+            }
+          },1500)
+        }
+      },
+
+      // 失焦触发请求
+      change: function() {
+        if (lastSearchText !== searchInput.val()) {
+          search(true, searchInput, (cards) => {
+            resolveCars(cards)
           })
         }
-      },1500)
-
-    })
+      }
+  })
   }
 
   // 控制卡片风手琴
