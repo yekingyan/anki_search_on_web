@@ -500,7 +500,7 @@ $(document).ready(() => {
     return
   }
   if(!targetDom[0]) {
-    console.log('在页面没有找到可依附的元素')
+    console.log('在页面没有找到可依附的元素', targetDom)
     return
   }
 
@@ -545,32 +545,35 @@ $(document).ready(() => {
   $('#accordionCard').on('click', '.collapsed', function (event) {
     let cardTitle = $(event.target)
     let targetId = cardTitle.data('target')
-    let targetCard = $(targetId)
+    let collapse = $(targetId)
     
+    mylog('target1', collapse)
+
     // 目标元素的显示与隐藏
-    if (targetCard.hasClass('show')) {
+    if (collapse.hasClass('show')) {
       // 如果有 show的class 则去掉并隐藏
-      targetCard.hide()
+      collapse.hide()
     } else {
       // 如果没有 show的class，则加上，并显示
-      targetCard.show()
+      collapse.show()
     }
-    targetCard.toggleClass('show')
+    collapse.toggleClass('show')
+    mylog('target2', collapse)
 
     // 上一个元素的显示与隐藏
-    mylog('lastClick', lastClick)
-    if (lastClick) {
+    mylog('lastClick1', lastClick)
+    if (lastClick && lastClick !== collapse) {
       // 如果有 show的class 则去掉并隐藏
       lastClick.hide()
       lastClick.removeClass('show')
     }
     
     // 如果目标卡片是打开状态，标志
-    if (targetCard.hasClass('show')) {
-      lastClick = targetCard
+    if (collapse.hasClass('show')) {
+      lastClick = collapse
     }
-
-    mylog('target', targetCard)
+    mylog('lastClick2', lastClick)
+    
     
 })
 
@@ -591,7 +594,7 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 布局，图片大小， 多次点击有bug
+// TODO: 多次点击同一元素有bug
 //-----------------------------------------------------------------------
 
 })();
