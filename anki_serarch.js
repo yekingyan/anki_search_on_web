@@ -547,22 +547,12 @@ $(document).ready(() => {
     let targetId = cardTitle.data('target')
     let collapse = $(targetId)
     
-    mylog('target1', collapse)
-
-    // 目标元素的显示与隐藏
-    if (collapse.hasClass('show')) {
-      // 如果有 show的class 则去掉并隐藏
-      collapse.hide()
-    } else {
-      // 如果没有 show的class，则加上，并显示
-      collapse.show()
-    }
+    //目标元素的显示与隐藏
+    collapse.toggle()
     collapse.toggleClass('show')
-    mylog('target2', collapse)
 
-    // 上一个元素的显示与隐藏
-    mylog('lastClick1', lastClick)
-    if (lastClick && lastClick !== collapse) {
+    // 上一个元素的隐藏，如果是自身则不操作
+    if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
       // 如果有 show的class 则去掉并隐藏
       lastClick.hide()
       lastClick.removeClass('show')
@@ -572,8 +562,6 @@ $(document).ready(() => {
     if (collapse.hasClass('show')) {
       lastClick = collapse
     }
-    mylog('lastClick2', lastClick)
-    
     
 })
 
@@ -594,7 +582,7 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 多次点击同一元素有bug
+// TODO: 其它网站适配
 //-----------------------------------------------------------------------
 
 })();
