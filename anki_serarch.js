@@ -6,8 +6,6 @@
 // @author       Yekingyan
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
-// @require      https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js
-// @require      https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js
 // @include      https://www.google.com/*
 // @include      todohttps://www.bing.com/*
 // @include      todohttp://www.bing.com/*
@@ -34,10 +32,102 @@ const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
 
 // 依赖
 const requiredScript = `
-  <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
   <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
-  <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
-  <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+  <style>
+
+/*card*/
+
+.mb-1 {
+    margin-bottom: .25rem!important;
+}
+
+element.style {
+    max-width: 30rem;
+}
+.mb-1, .my-1 {
+    margin-bottom: .25rem!important;
+}
+.rounded {
+    border-radius: .25rem!important;
+}
+
+.border-success {
+    border-color: #dfe1e5!important;
+}
+
+.card {
+    position: relative;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1.5px solid #dfe1e5;
+    border-radius: .25rem;
+}
+
+/* cardheader */
+.card-header:first-child {
+    border-radius: calc(.25rem - 1px) calc(.25rem - 1px) 0 0;
+}
+.font-weight-bold {
+    font-weight: 700!important;
+}
+
+.bg-title {
+  background-color: #c6e1e4!important;
+}
+
+.card-header {
+    padding: .75rem 1.25rem;
+    margin-bottom: 0;
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+/*card body*/
+.text-success {
+    color: #28a745!important;
+}
+.card-body {
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: .75rem 1.25rem;
+    border-bottom: solid 1px;
+}
+
+*, ::after, ::before {
+    box-sizing: border-box;
+
+
+/*card footer*/
+.card-footer:last-child {
+    border-radius: 0 0 calc(.25rem - 1px) calc(.25rem - 1px);
+}
+
+.border-success {
+    border-color: #28a745!important;
+}
+.bg-transparent {
+    background-color: transparent!important;
+}
+.card-footer {
+    padding: .75rem 1.25rem;
+    background-color: rgba(0,0,0,.03);
+    border-top: 1px solid rgba(0,0,0,.125);
+}
+
+.card-footer.bg-transparent.border-success {
+  margin-top: 10px;
+}
+
+*, ::after, ::before {
+    box-sizing: border-box;
+}
+</style>
 `
 
 const media_url = 'file:///' + media_path
@@ -203,14 +293,14 @@ let callbackTimes = next_id()
 
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
-    <div class="card border-success mb-1 rounded" style="max-width: 30rem;">
-      <div class="card-header bg-transparent border-primary font-weight-bold
+    <div class="card border-success mb-1 rounded" style="max-width: 40rem;">
+      <div class="card-header bg-title font-weight-bold
       collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
       ${title}
       </div>
 
       <div class="collapse ${show}"  id="collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
-        <div class="card-body text-success" >${frontCard}</div>
+        <div class="card-body text-success border-success" >${frontCard}</div>
         <div class="card-footer bg-transparent border-success">${backCard}</div>
       </div>
 
@@ -268,7 +358,7 @@ const insertCards = (domsArray, targetDom) => {
       // dom 更替src属性
       imageDom.attr('src', data)
       //样式 限制图片大小
-      imageDom.attr('style', 'max-height: 450px;')
+      imageDom.attr('style', 'max-height: 450px; max-width: 517px;')
     })
   })
 }
