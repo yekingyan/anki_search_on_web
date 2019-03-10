@@ -349,8 +349,16 @@ const insertCards = (domsArray, targetDom) => {
 
   // 添加搜索结果到容器内
   let str, imageDom
-  domsArray.forEach(item => {
+  domsArray.forEach((item, index) => {
     father.append(item)
+
+    // 卡片加入时只显示标题
+     let collapse = $(item).find('.collapse')
+     if (index !== 0) {
+       collapse.hide()
+     } else {
+       lastClick = collapse
+     }
 
     // 获取卡片的str， 用于更替src资源
     str = $(item[1]).html()
@@ -583,7 +591,7 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 布局，图片大小
+// TODO: 布局，图片大小， 多次点击有bug
 //-----------------------------------------------------------------------
 
 })();
