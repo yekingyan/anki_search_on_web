@@ -219,6 +219,10 @@ const searchByTest =  (searchText, from='-deck:English') => {
     const _searchByTest = new Promise( (resolve, reject) => {
       $.post(local_url, data)
         .done((res) => {
+          // 只要前37个结果
+          res.result.length >= 37 
+            ? res.result.length = 37 
+            : null
           resolve(res.result)
         })
         .fail((err) => {
