@@ -272,7 +272,7 @@ const search = (canRequest, searchInput, callback) => {
      .then((ids)=> {
        searchByIds(ids).then((cards) => {
          callback(cards)
-         console.log('请求次数/2', count.next())
+         console.log('总请求次数', count.next().value * 2)
        })
      })
    }
@@ -541,7 +541,7 @@ $(document).ready(() => {
               // 1秒内没有新的事件触发，必发一次结合请求
               lastSearchText = searchInput.val()
               search(canRequest, searchInput, (cards) => {
-                console.log('inputEven request', searchInput.val(), lastCount.next() ,cards)
+                console.log('inputEven request tiems',lastCount.next().value, searchInput.val(), cards)
                 resolveCars(cards)
               })
             }
