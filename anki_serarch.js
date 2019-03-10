@@ -6,12 +6,10 @@
 // @author       Yekingyan
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
-// @require      https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js
-// @require      https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js
 // @include      https://www.google.com/*
 // @include      todohttps://www.bing.com/*
 // @include      todohttp://www.bing.com/*
-// @include      todohttps://cn.bing.com/*
+// @include      https://cn.bing.com/*
 // @include      todohttps://www.baidu.com/*
 // @include      todohttp://www.baidu.com/*
 // @include      todohttps://search.yahoo.com/*
@@ -34,10 +32,102 @@ const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
 
 // 依赖
 const requiredScript = `
-  <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
   <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
-  <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
-  <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+  <style>
+
+/*card*/
+
+.mb-1 {
+    margin-bottom: .25rem!important;
+}
+
+element.style {
+    max-width: 30rem;
+}
+.mb-1, .my-1 {
+    margin-bottom: .25rem!important;
+}
+.rounded {
+    border-radius: .25rem!important;
+}
+
+.border-success {
+    border-color: #dfe1e5!important;
+}
+
+.card {
+    position: relative;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    min-width: 0;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: border-box;
+    border: 1.5px solid #dfe1e5;
+    border-radius: .25rem;
+}
+
+/* cardheader */
+.card-header:first-child {
+    border-radius: calc(.25rem - 1px) calc(.25rem - 1px) 0 0;
+}
+.font-weight-bold {
+    font-weight: 700!important;
+}
+
+.bg-title {
+  background-color: #c6e1e4!important;
+}
+
+.card-header {
+    padding: .75rem 1.25rem;
+    margin-bottom: 0;
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+/*card body*/
+.text-success {
+    color: #28a745!important;
+}
+.card-body {
+    -ms-flex: 1 1 auto;
+    flex: 1 1 auto;
+    padding: .75rem 1.25rem;
+    border-bottom: solid 1px;
+}
+
+// *, ::after, ::before {
+//     box-sizing: border-box;
+
+
+/*card footer*/
+.card-footer:last-child {
+    border-radius: 0 0 calc(.25rem - 1px) calc(.25rem - 1px);
+}
+
+.border-success {
+    border-color: #28a745!important;
+}
+.bg-transparent {
+    background-color: transparent!important;
+}
+.card-footer {
+    padding: .75rem 1.25rem;
+    background-color: rgba(0,0,0,.03);
+    border-top: 1px solid rgba(0,0,0,.125);
+}
+
+.card-footer.bg-transparent.border-success {
+  margin-top: 10px;
+}
+
+// *, ::after, ::before {
+//     box-sizing: border-box;
+// }
+</style>
 `
 
 const media_url = 'file:///' + media_path
@@ -57,7 +147,7 @@ const getHostSearchInputAndTarget = () => {
     targetDom = $('#rhs_block')
   } else if (host.includes('bing')) {
     WHERE = 'bing'
-    searchInput = $('.b_searchbox')
+    searchInput = $('#sb_form_q')
     targetDom = $('#b_context')
   } else if (host.includes('baidu')) {
     WHERE = 'baidu'
@@ -129,6 +219,10 @@ const searchByTest =  (searchText, from='-deck:English') => {
     const _searchByTest = new Promise( (resolve, reject) => {
       $.post(local_url, data)
         .done((res) => {
+          // 只要前37个结果
+          res.result.length >= 37 
+            ? res.result.length = 37 
+            : null
           resolve(res.result)
         })
         .fail((err) => {
@@ -178,7 +272,7 @@ const search = (canRequest, searchInput, callback) => {
      .then((ids)=> {
        searchByIds(ids).then((cards) => {
          callback(cards)
-         console.log('请求次数/2', count.next())
+         console.log('总请求次数', count.next().value * 2)
        })
      })
    }
@@ -203,14 +297,14 @@ let callbackTimes = next_id()
 
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
-    <div class="card border-success mb-1 rounded" style="max-width: 30rem;">
-      <div class="card-header bg-transparent border-primary font-weight-bold
+    <div class="card border-success mb-1 rounded" style="max-width: 40rem;">
+      <div class="card-header bg-title font-weight-bold
       collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
       ${title}
       </div>
 
       <div class="collapse ${show}"  id="collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
-        <div class="card-body text-success" >${frontCard}</div>
+        <div class="card-body text-success border-success" >${frontCard}</div>
         <div class="card-footer bg-transparent border-success">${backCard}</div>
       </div>
 
@@ -220,24 +314,14 @@ let templateItem = (id, title, frontCard, backCard, show='show')=> {
 }
 
 
-
+// 容器
 const container = `<div id="accordionCard"><div>`
 
-const insertCards = (domsArray, targetDom) => {
+const insertContainet = (targetDom) => {
   /**
-   * 将节点插入到页面中
-   * domsArray: array dom节点列表
-   * targetDom： 要在页面中依附的元素
-   */
-
-  if(!targetDom[0]) {
-    console.log('在页面没找到可依附的元素')
-    return
-  }
-
-  // 加入容器到页面
+   *  插入容器到页面
+   *  */
   let containerDiv = $.parseHTML(container)
-
   let father = $('#accordionCard')
   if (!Object.keys(father).length) {
     // 根据不同网站加入容器
@@ -249,17 +333,36 @@ const insertCards = (domsArray, targetDom) => {
       case 'baidu': targetDom[0].prepend(containerDiv[0])
       break
     }
+  }
+}
 
-    father = $('#accordionCard')
-  } else {
-    // 多次搜索清空旧结果
+const insertCards = (domsArray) => {
+  /**
+   * 将节点插入到页面中
+   * domsArray: array dom节点列表
+   * targetDom： 要在页面中依附的元素
+   */
+
+
+
+  // 多次搜索清空旧结果
+  let father = $('#accordionCard')
+  if (Object.keys(father).length) {
     father.empty()
   }
 
   // 添加搜索结果到容器内
   let str, imageDom
-  domsArray.forEach(item => {
+  domsArray.forEach((item, index) => {
     father.append(item)
+
+    // 卡片加入时只显示标题
+     let collapse = $(item).find('.collapse')
+     if (index !== 0) {
+       collapse.hide()
+     } else {
+       lastClick = collapse
+     }
 
     // 获取卡片的str， 用于更替src资源
     str = $(item[1]).html()
@@ -268,7 +371,7 @@ const insertCards = (domsArray, targetDom) => {
       // dom 更替src属性
       imageDom.attr('src', data)
       //样式 限制图片大小
-      imageDom.attr('style', 'max-height: 450px;')
+      imageDom.attr('style', 'max-height: 450px; max-width: 517px;')
     })
   })
 }
@@ -382,49 +485,104 @@ const resolveCars = (cards, targetDom) => {
     itemDivs.push(itemDiv)
   })
   // 处理收集的itemDivs，插入到页面中
-  insertCards(itemDivs, targetDom)
+  insertCards(itemDivs)
 }
 
+// 记录最后一次显示或隐藏的卡片
+let lastClick
 
 $(document).ready(() => {
+
   // 获取输入框 与 搜索值
   let [searchInput, targetDom] = getHostSearchInputAndTarget()
 
-  // 注入脚本
-  if (searchInput) {
-    let html = $.parseHTML(requiredScript,document,true )
-    $('body').append(html)
+  // 终止搜索
+  if (!searchInput[0]) {
+    console.log('在页面没有找到搜索框')
+    return
+  }
+  if(!targetDom[0]) {
+    console.log('在页面没有找到可依附的元素', targetDom)
+    return
   }
 
+
+  // 注入脚本
+  let html = $.parseHTML(requiredScript,document, true)
+  $('body').append(html)
+
+  // 插入容器到页面
+  insertContainet(targetDom)
+
+
+  // 刷新，搜索一次
   search(true, searchInput, (cards) => {
-    resolveCars(cards, targetDom)
+    resolveCars(cards)
   })
   
-  // 用于控制是否请求
-  let canRequest = false
 
-  // 监听事件
+  // 监听输入框的搜索事件
+  let canRequest = false  // 用于控制是否请求
+  let lastSearchText = '' // 最新一次请求的搜索的参数
   if (searchInput) {
-    searchInput.on('keyup', () => {
+    searchInput.on({
+
+      // 有输入行为
+      input: function() {
       // search from ANKI
+        let eventTime = Date.parse(new Date())
+        // 减少请求次数
+        if (lastSearchText !== searchInput.val()) {
+          // 相同的内容就不请求了
+          setTimeout(() => {
+            canRequest = !canRequest
+            let lastTime = Date.parse(new Date())
+            if (lastTime-eventTime > 1000) {
+              // 1秒内没有新的事件触发，必发一次结合请求
+              lastSearchText = searchInput.val()
+              search(canRequest, searchInput, (cards) => {
+                console.log('inputEven request tiems',lastCount.next().value, searchInput.val(), cards)
+                resolveCars(cards)
+              })
+            }
+          },1500)
+        }
+      },
 
-      let eventTime = Date.parse(new Date())
-
-      // 减少请求次数
-      setTimeout(() => {
-        canRequest = !canRequest
-        let lastTime = Date.parse(new Date())
-        if (lastTime-eventTime > 1000) {
-          // 1秒内没有新的事件触发，必发一次结合请求
-          search(canRequest, searchInput, (cards) => {
-            console.log('last request', searchInput.val(), lastCount.next() ,cards)
-            resolveCars(cards, targetDom)
+      // 失焦触发请求
+      change: function() {
+        if (lastSearchText !== searchInput.val()) {
+          search(true, searchInput, (cards) => {
+            resolveCars(cards)
           })
         }
-      },1500)
-
-    })
+      }
+  })
   }
+
+  // 控制卡片风手琴
+  $('#accordionCard').on('click', '.collapsed', function (event) {
+    let cardTitle = $(event.target)
+    let targetId = cardTitle.data('target')
+    let collapse = $(targetId)
+    
+    //目标元素的显示与隐藏
+    collapse.toggle()
+    collapse.toggleClass('show')
+
+    // 上一个元素的隐藏，如果是自身则不操作
+    if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
+      // 如果有 show的class 则去掉并隐藏
+      lastClick.hide()
+      lastClick.removeClass('show')
+    }
+    
+    // 如果目标卡片是打开状态，标志
+    if (collapse.hasClass('show')) {
+      lastClick = collapse
+    }
+    
+})
 
 })
 
@@ -443,7 +601,7 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 布局，图片大小
+// TODO: 其它网站适配
 //-----------------------------------------------------------------------
 
 })();
