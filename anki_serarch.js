@@ -2,7 +2,7 @@
 // @name         Anki_Search
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  同步搜索Anki上的内容，目前只支持google。依赖AnkiConnect（插件：2055492159）
+// @description  同步搜索Anki上的内容，目前支持google、bing。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
