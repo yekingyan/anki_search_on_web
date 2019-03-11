@@ -131,25 +131,31 @@ const getHostSearchInputAndTarget = () => {
    * 获取当前网站的搜索输入框 与 需要插入的位置
    *  */
   let host = window.location.host
-  let searchInput = undefined
-  let targetDom = undefined
-  if (host.includes('google')) {
-    WHERE = 'google'
-    searchInput = $('.gLFyf')
-    targetDom = $('#rhs')
-  } else if (host.includes('bing')) {
-    WHERE = 'bing'
-    searchInput = $('#sb_form_q')
-    targetDom = $('#b_context')
-  } else if (host.includes('baidu')) {
-    WHERE = 'baidu'
-    searchInput = $('#kw')
-    targetDom = $('#content_right')
-  } else if (host.includes('yahoo')) {
-    WHERE = 'yahoo'
-    searchInput = $('#yschsp')
-    targetDom = $('#right')
-  }
+  let searchInput = undefined  // 搜索框
+  let targetDom = undefined    // 左边栏的父节点
+
+  let HOST_MAP = new Map([
+    ['google', [
+      '.gLFyf', '#rhs'
+    ]],
+    ['bing', [
+      '#sb_form_q', '#b_context'
+    ]],
+    ['yahoo', [
+      '#yschsp', '#right'
+    ]],
+    // ['duckduckgo', [
+    //   '#search_form_input', '.results--sidebar'
+    // ]],
+  ])
+
+  HOST_MAP.forEach((value, key) => {
+    if (host.includes(key)) {
+      WHERE = value
+      searchInput = $(value[0])
+      targetDom = $(value[1])
+    }
+  })
 
   return [searchInput, targetDom]
 }
@@ -529,7 +535,7 @@ $(document).ready(() => {
 
   // 终止搜索
   if (!searchInput[0]) {
-    console.log('在页面没有找到搜索框')
+    console.log('在页面没有找到搜索框', searchInput)
     return
   }
   if(!targetDom[0]) {
@@ -633,7 +639,8 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 其它网站适配
+// TODO: 如果想适配百度，需把css的rem 换算，百度的rem 有毒
+// FIXME: bing 只有完成重载才能获取到dom
 //-----------------------------------------------------------------------
 
 })();
