@@ -195,6 +195,7 @@ const searchByFileName = (filename) => {
         reject(err)
       })
   })
+  srcCount = getSrcCount.next().value
   return _searchByFileName
 }
 
@@ -226,6 +227,7 @@ const searchByTest =  (searchText) => {
           reject(err)
         })
     })
+    idCount = getIdCount.next().value
   return _searchByTest
 }
 
@@ -249,6 +251,7 @@ const searchByIds = (ids) => {
         reject(err)
       })
   })
+  detailCount = getDetailCount.next().value
   return _searchByIds
 }
 
@@ -268,8 +271,13 @@ const search = (canRequest, searchInput, callback) => {
      searchByTest(searchValue)
      .then((ids)=> {
        searchByIds(ids).then((cards) => {
-         callback(cards)
-         console.log('总请求次数', count.next().value * 2)
+          callback(cards)
+          console.log(
+           '总请求次数:', idCount+detailCount+srcCount, '\n' ,
+           'src请求次数：', srcCount + '\n' ,
+           'detail请求次数', detailCount + '\n' ,
+           'id请求次数', idCount + '\n' ,
+           )
        })
      })
    }
@@ -286,11 +294,14 @@ function* next_id() {
   }
 }
 
-let count = next_id()
 let lastCount = next_id()
+let getIdCount = next_id()
+let getDetailCount = next_id()
+let getSrcCount = next_id()
+let idCount = 0
+let detailCount = 0
+let srcCount = 0
 
-let appendTimes = next_id()
-let callbackTimes = next_id()
 
 let templateItem = (id, title, frontCard, backCard, show='show')=> {
   let template = `
@@ -351,13 +362,19 @@ const insertCards = (domsArray) => {
 
   // 添加搜索结果到容器内
   let str, imageDom
+  let fit = 'width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;'
   domsArray.forEach((item, index) => {
     father.append(item)
     
     switch(WHERE){
-      // case 'google': $(item).attr('style', 'min-width: 40rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
-      case 'bing': $(item).attr('style', 'min-width: 28rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
-      // default: $(item).attr('style', 'min-width: 26rem; max-width: 45rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;')
+      // case 'google': $(item).attr('style', 'min-width: 40rem; max-width: 45rem;' + fit)
+      // break
+      case 'bing': $(item).attr('style', 'min-width: 28rem; max-width: 45rem;' + fit)
+      break
+      case 'baidu': $(item).attr('style', 'min-width: 400px; max-width: 600px;' + fit)
+      break
+      // default: $(item).attr('style', 'min-width: 35rem; max-width: 45rem;' + fit)
+      // break
     }
     
 
@@ -496,19 +513,28 @@ const resolveCars = (cards, targetDom) => {
   insertCards(itemDivs)
 }
 
-// 记录最后一次显示或隐藏的卡片
-let lastClick, searchInput, targetDom
+
+let lastClick  // 记录最后一次显示或隐藏的卡片
+// let glbSearchInput, glbTargetDom  // 记录dom节点
 $(document).ready(() => {
 
   // 获取输入框 与 搜索值
-  ;([searchInput, targetDom] = getHostSearchInputAndTarget())
+  let [searchInput, targetDom] = getHostSearchInputAndTarget()
+  // bing 点搜索dom会消失，只有重载才定位到dom,
+  // Object.keys(searchInput).length ? glbSearchInput = searchInput : null
+  // Object.keys(targetDom).length ? glbTargetDom = targetDom : null
+  // searchInput = Object.keys(searchInput).length ? searchInput : glbSearchInput
+  // targetDom = Object.keys(targetDom).length ? targetDom : glbTargetDom
+
 
   // 终止搜索
   if (!searchInput[0]) {
     console.log('在页面没有找到搜索框')
+    return
   }
   if(!targetDom[0]) {
     console.log('在页面没有找到可依附的元素', targetDom)
+    return
   }
 
 
@@ -556,6 +582,7 @@ $(document).ready(() => {
 
       // 失焦触发请求
       change: function() {
+        console.log('change request', searchInput.val())
         if (lastSearchText !== searchInput.val()) {
           search(true, searchInput, (cards) => {
             resolveCars(cards)
