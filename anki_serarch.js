@@ -135,27 +135,20 @@ const getHostSearchInputAndTarget = () => {
   let targetDom = undefined    // 左边栏的父节点
 
   let HOST_MAP = new Map([
-    ['google', [
-      '.gLFyf', '#rhs'
-    ]],
-    ['bing', [
-      '#sb_form_q', '#b_context'
-    ]],
-    ['yahoo', [
-      '#yschsp', '#right'
-    ]],
-    // ['duckduckgo', [
-    //   '#search_form_input', '.results--sidebar'
-    // ]],
+    ['google', ['.gLFyf', '#rhs']],
+    ['bing', ['#sb_form_q', '#b_context']],
+    ['yahoo', ['#yschsp', '#right']],
+    // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
   ])
 
-  HOST_MAP.forEach((value, key) => {
+  for (let [key, value] of HOST_MAP) {
     if (host.includes(key)) {
-      WHERE = value
+      WHERE = key
       searchInput = $(value[0])
       targetDom = $(value[1])
+      break
     }
-  })
+  }
 
   return [searchInput, targetDom]
 }
