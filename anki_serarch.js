@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Anki_Search
-// @namespace    http://tampermonkey.net/
+// @namespace    https://github.com/yekingyan/anki_search_on_web/
 // @version      0.3
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
@@ -13,6 +13,7 @@
 // @include      https://search.yahoo.com/*
 // @include      https://www.baidu.com/*
 // @include      http://www.baidu.com/*
+// @include      https://ankiweb.net/*
 // @grant        unsafeWindow
 // ==/UserScript==
 
