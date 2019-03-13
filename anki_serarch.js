@@ -144,8 +144,8 @@ const getHostSearchInputAndTarget = () => {
   for (let [key, value] of HOST_MAP) {
     if (host.includes(key)) {
       WHERE = key
-      searchInput = $(value[0])
-      targetDom = $(value[1])
+      searchInput = $(value[0], window.top.document)
+      targetDom = $(value[1], window.top.document)
       break
     }
   }
@@ -329,18 +329,10 @@ const insertContainet = (targetDom) => {
    *  插入容器到页面
    *  */
   let containerDiv = $.parseHTML(container)
-  let father = $('#accordionCard')
-  if (!Object.keys(father).length) {
+  let father = $('#accordionCard', window.top.document)
+  if (Object.keys(father).length <= 2) {
     // 根据不同网站加入容器
     targetDom[0].prepend(containerDiv[0])
-    // switch (WHERE) {
-    //   case 'google': targetDom[0].prepend(containerDiv[0])
-    //   break
-    //   case 'bing': targetDom[0].prepend(containerDiv[0])
-    //   break
-    //   case 'baidu': targetDom[0].prepend(containerDiv[0])
-    //   break
-    // }
   }
 }
 
@@ -354,10 +346,8 @@ const insertCards = (domsArray) => {
 
 
   // 多次搜索清空旧结果
-  let father = $('#accordionCard')
-  if (Object.keys(father).length) {
-    father.empty()
-  }
+  let father = $('#accordionCard', window.top.document)
+  father.empty()
 
   // 添加搜索结果到容器内
   let str, imageDom
@@ -388,7 +378,7 @@ const insertCards = (domsArray) => {
     // 获取卡片的str， 用于更替src资源
     str = $(item[1]).html()
     collectSrc(str, (filename, data) => {
-      imageDom = $(`img[src="${filename}"]`)
+      imageDom = $(`img[src="${filename}"]`, window.top.document)
       // dom 更替src属性
       imageDom.attr('src', data)
       //样式 限制图片大小
@@ -513,18 +503,17 @@ const resolveCars = (cards, targetDom) => {
 }
 
 
+$(window.top.document).ready(() => {
+   // 注入脚本
+   let html = $.parseHTML(requiredScript, window.top.document, true)
+   $('body', window.top.document).append(html)
+})
+
 let lastClick  // 记录最后一次显示或隐藏的卡片
-// let glbSearchInput, glbTargetDom  // 记录dom节点
 $(document).ready(() => {
 
   // 获取输入框 与 搜索值
   let [searchInput, targetDom] = getHostSearchInputAndTarget()
-  // bing 点搜索dom会消失，只有重载才定位到dom,
-  // Object.keys(searchInput).length ? glbSearchInput = searchInput : null
-  // Object.keys(targetDom).length ? glbTargetDom = targetDom : null
-  // searchInput = Object.keys(searchInput).length ? searchInput : glbSearchInput
-  // targetDom = Object.keys(targetDom).length ? targetDom : glbTargetDom
-
 
   // 终止搜索
   if (!searchInput[0]) {
@@ -537,10 +526,6 @@ $(document).ready(() => {
   }
 
 
-  // 注入脚本
-  let html = $.parseHTML(requiredScript,document, true)
-  $('body').append(html)
-
   // 插入容器到页面
   insertContainet(targetDom)
 
@@ -550,7 +535,7 @@ $(document).ready(() => {
     resolveCars(cards)
   })
   
-
+  mylog(searchInput, searchInput.val(), targetDom)
   // 监听输入框的搜索事件
   let canRequest = false  // 用于控制是否请求
   let lastSearchText = '' // 最新一次请求的搜索的参数
@@ -592,10 +577,11 @@ $(document).ready(() => {
   }
 
   // 控制卡片风手琴
-  $('#accordionCard').on('click', '.collapsed', function (event) {
+  $('#accordionCard', window.top.document).on('click', '.collapsed', function (event) {
+    
     let cardTitle = $(event.target)
     let targetId = cardTitle.data('target')
-    let collapse = $(targetId)
+    let collapse = $(targetId, window.top.document)
     
     //目标元素的显示与隐藏
     collapse.toggle(500)
