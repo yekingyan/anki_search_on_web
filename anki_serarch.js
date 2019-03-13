@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.3
 // @description  同步搜索Anki上的内容，目前支持google、bing。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -11,6 +11,8 @@
 // @include      http://www.bing.com/*
 // @include      https://cn.bing.com/*
 // @include      https://search.yahoo.com/*
+// @include      https://www.baidu.com/*
+// @include      http://www.baidu.com/*
 // @grant        unsafeWindow
 // ==/UserScript==
 
@@ -138,6 +140,7 @@ const getHostSearchInputAndTarget = () => {
     ['google', ['.gLFyf', '#rhs']],
     ['bing', ['#sb_form_q', '#b_context']],
     ['yahoo', ['#yschsp', '#right']],
+    ['baidu', ['#kw', '#content_right']],
     // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
   ])
 
@@ -360,7 +363,11 @@ const insertCards = (domsArray) => {
       // break
       case 'bing': $(item).attr('style', 'min-width: 28rem; max-width: 45rem;' + fit)
       break
-      case 'baidu': $(item).attr('style', 'min-width: 400px; max-width: 600px;' + fit)
+      case 'baidu': // 如果想适配百度，需把css的rem 换算，百度的rem 有毒
+        $(item).attr('style', 'min-width: 400px; max-width: 600px;' + fit)
+        $(item).find('.anki-card-footer').attr('style', 'padding: 9.75px 16.25px;')
+        $(item).find('.anki-card-body').attr('style', 'padding: 9.75px 16.25px;')
+        $(item).find('.anki-card-header').attr('style', 'padding: 9.75px 16.25px;')
       break
       // default: $(item).attr('style', 'min-width: 35rem; max-width: 45rem;' + fit)
       // break
@@ -618,8 +625,6 @@ const test = (condition, e) => {
   }
 }
 
-// TODO: 如果想适配百度，需把css的rem 换算，百度的rem 有毒
-// FIXME: bing 只有完成重载才能获取到dom
 //-----------------------------------------------------------------------
 
 })();

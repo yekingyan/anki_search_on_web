@@ -2,7 +2,7 @@
 ## 在网页上同步搜索本地的的Anki数据
 
 ---
-### 效果展示
+### 效果展示(目前适配google、 bing、yahoo、百度)
 ![image](display.gif)
 
 ### 安装
