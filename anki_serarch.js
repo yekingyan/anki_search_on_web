@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.4
+// @version      0.5
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -134,8 +134,8 @@
          * 获取当前网站的搜索输入框 与 需要插入的位置
          *  */
         let host = window.location.host
-        let searchInput = undefined  // 搜索框
-        let targetDom = undefined    // 左边栏的父节点
+        let searchInput = [undefined]  // 搜索框
+        let targetDom = [undefined]    // 左边栏的父节点
 
         let HOST_MAP = new Map([
             ['google', ['.gLFyf', '#rhs']],
@@ -259,31 +259,30 @@
     }
 
 
-    const search = (canRequest, searchInput, callback) => {
+    const search = (searchValue, callback) => {
         /**
          * 结合两次请求, 一次完整的搜索
          * searchByTest() --> searchByIds()
-         * canRequest: bool 是否请求
-         * searchInput: 搜索框dom
+         * searchValue: 搜索框的内容
          * callback: cards: array
          */
 
-        let searchValue = searchInput.val()
-        if (canRequest && searchValue) {
-            searchValue = searchInput.val()
-            searchByTest(searchValue)
-                .then((ids) => {
-                    searchByIds(ids).then((cards) => {
-                        callback(cards)
-                        console.log(
-                            '总请求次数:', idCount + detailCount + srcCount, '\n',
-                            'src请求次数：', srcCount + '\n',
-                            'detail请求次数', detailCount + '\n',
-                            'id请求次数', idCount + '\n' ,
-                        )
-                    })
-                })
+        if (!searchValue.length) {
+            return
         }
+
+        searchByTest(searchValue).then((ids) => {
+            searchByIds(ids).then((cards) => {
+                callback(cards)
+                console.log(
+                    '总请求次数:', idCount + detailCount + srcCount, '\n',
+                    'src请求次数：', srcCount + '\n',
+                    'detail请求次数', detailCount + '\n',
+                    'id请求次数', idCount + '\n' ,
+                )
+            })
+        })
+        
     }
 
     function* next_id() {
@@ -516,37 +515,34 @@
         /**
          * 搜索框有内容变化触发更新
          */
-        let canRequest = false  // 用于控制是否请求
         let lastSearchText = '' // 最新一次请求的搜索的参数
+        let lastTime            // 最后触发事件的时间 
         searchInput.on({
 
             // 有输入行为
-            input: function () {
-                // search from ANKI
-                let eventTime = Date.parse(new Date())
-                // 减少请求次数
+            input: function (e) {
+                // 相同的内容就不请求了
                 if (lastSearchText !== searchInput.val()) {
-                    // 相同的内容就不请求了
+                     // 0.7秒内没有新的事件触发，才发一次结合请求
+                    lastTime = e.timeStamp
                     setTimeout(() => {
-                        canRequest = !canRequest
-                        let lastTime = Date.parse(new Date())
-                        if (lastTime - eventTime > 1000) {
-                            // 1秒内没有新的事件触发，必发一次结合请求
+                        if (lastTime - e.timeStamp == 0) {
                             lastSearchText = searchInput.val()
-                            search(canRequest, searchInput, (cards) => {
+                            search(lastSearchText, (cards) => {
                                 console.log('inputEven request tiems', lastCount.next().value, searchInput.val(), cards)
                                 resolveCars(cards)
                             })
                         }
-                    }, 1500)
+                    }, 700)
                 }
+
             },
 
             // 失焦触发请求
             change: function () {
                 console.log('change request', searchInput.val())
                 if (lastSearchText !== searchInput.val()) {
-                    search(true, searchInput, (cards) => {
+                    search(searchInput.val(), (cards) => {
                         resolveCars(cards)
                     })
                 }
@@ -615,15 +611,13 @@
 
 
         // 刷新，搜索一次
-        search(true, searchInput, (cards) => {
+        search(searchInput.val(), (cards) => {
             resolveCars(cards)
         })
 
-        // 不发空请求, 有输入框才有请求
-        if (searchInput) {
-            //输入框的搜索事件监听
-            seacrhAddEventListener(searchInput)
-        }
+
+        // 输入框的搜索事件监听
+        seacrhAddEventListener(searchInput)
 
         // 控制卡片风手琴的事件监听
         switchCardAddEventListener()
