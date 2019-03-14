@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.3
+// @version      0.4
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -359,6 +359,7 @@ const insertCards = (domsArray) => {
   domsArray.forEach((item, index) => {
     father.append(item)
     
+    // 卡片样式在各站点的适配
     switch(WHERE){
       // case 'google': $(item).attr('style', 'min-width: 40rem; max-width: 45rem;' + fit)
       // break
@@ -389,8 +390,8 @@ const insertCards = (domsArray) => {
       imageDom = $(`img[src="${filename}"]`, window.top.document)
       // dom 更替src属性
       imageDom.attr('src', data)
-      //样式 限制图片大小
-      imageDom.attr('style', 'max-height: 450px; max-width: 517px;')
+      //样式 限制图片宽度
+      imageDom.attr('style', ' max-width: 520px;')
     })
   })
 }
@@ -432,16 +433,16 @@ const src_base64 = (base64) => {
 
 
 
-const replaceDivSrc = (str, s_b_map) => {
-  /**
-   * 更替div中的src属性
-   */
-  let tempStr = str
-  for (let i of s_b_map) {
-    tempStr = tempStr.replace(i[0], i[i])
-  }
-  return tempStr
-}
+// const replaceDivSrc = (str, s_b_map) => {
+//   /**
+//    * 更替div中的src属性
+//    */
+//   let tempStr = str
+//   for (let i of s_b_map) {
+//     tempStr = tempStr.replace(i[0], i[i])
+//   }
+//   return tempStr
+// }
 
 
 const collectSrc = (str, callback) => {
@@ -511,13 +512,88 @@ const resolveCars = (cards, targetDom) => {
 }
 
 
+const seacrhAddEventListener = (searchInput) => {
+  /**
+   * 搜索框有内容变化触发更新
+   */
+  let canRequest = false  // 用于控制是否请求
+  let lastSearchText = '' // 最新一次请求的搜索的参数
+  searchInput.on({
+
+    // 有输入行为
+    input: function() {
+    // search from ANKI
+      let eventTime = Date.parse(new Date())
+      // 减少请求次数
+      if (lastSearchText !== searchInput.val()) {
+        // 相同的内容就不请求了
+        setTimeout(() => {
+          canRequest = !canRequest
+          let lastTime = Date.parse(new Date())
+          if (lastTime-eventTime > 1000) {
+            // 1秒内没有新的事件触发，必发一次结合请求
+            lastSearchText = searchInput.val()
+            search(canRequest, searchInput, (cards) => {
+              console.log('inputEven request tiems',lastCount.next().value, searchInput.val(), cards)
+              resolveCars(cards)
+            })
+          }
+        },1500)
+      }
+    },
+
+    // 失焦触发请求
+    change: function() {
+      console.log('change request', searchInput.val())
+      if (lastSearchText !== searchInput.val()) {
+        search(true, searchInput, (cards) => {
+          resolveCars(cards)
+        })
+      }
+    },
+    
+  })
+}
+
+
+let lastClick  // 记录最后一次显示或隐藏的卡片
+const switchCardAddEventListener = () => {
+    /**
+     * 控制卡片风手琴
+     */
+    $('#accordionCard', window.top.document).on('click', '.collapsed', function (event) {
+    
+      let cardTitle = $(event.target)
+      let targetId = cardTitle.data('target')
+      let collapse = $(targetId, window.top.document)
+      
+      //目标元素的显示与隐藏
+      collapse.toggle(500)
+      collapse.toggleClass('show')
+  
+      // 上一个元素的隐藏，如果是自身则不操作
+      if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
+        // 如果有 show的class 则去掉并隐藏
+        lastClick.hide(500)
+        lastClick.removeClass('show')
+      }
+      
+      // 如果目标卡片是打开状态，标志
+      if (collapse.hasClass('show')) {
+        lastClick = collapse
+      }
+      
+  })
+}
+
+
 $(window.top.document).ready(() => {
    // 注入脚本
    let html = $.parseHTML(requiredScript, window.top.document, true)
    $('body', window.top.document).append(html)
 })
 
-let lastClick  // 记录最后一次显示或隐藏的卡片
+
 $(document).ready(() => {
 
   // 获取输入框 与 搜索值
@@ -543,71 +619,14 @@ $(document).ready(() => {
     resolveCars(cards)
   })
   
-  mylog(searchInput, searchInput.val(), targetDom)
-  // 监听输入框的搜索事件
-  let canRequest = false  // 用于控制是否请求
-  let lastSearchText = '' // 最新一次请求的搜索的参数
+  // 不发空请求, 有输入框才有请求
   if (searchInput) {
-    searchInput.on({
-
-      // 有输入行为
-      input: function() {
-      // search from ANKI
-        let eventTime = Date.parse(new Date())
-        // 减少请求次数
-        if (lastSearchText !== searchInput.val()) {
-          // 相同的内容就不请求了
-          setTimeout(() => {
-            canRequest = !canRequest
-            let lastTime = Date.parse(new Date())
-            if (lastTime-eventTime > 1000) {
-              // 1秒内没有新的事件触发，必发一次结合请求
-              lastSearchText = searchInput.val()
-              search(canRequest, searchInput, (cards) => {
-                console.log('inputEven request tiems',lastCount.next().value, searchInput.val(), cards)
-                resolveCars(cards)
-              })
-            }
-          },1500)
-        }
-      },
-
-      // 失焦触发请求
-      change: function() {
-        console.log('change request', searchInput.val())
-        if (lastSearchText !== searchInput.val()) {
-          search(true, searchInput, (cards) => {
-            resolveCars(cards)
-          })
-        }
-      }
-  })
+    //输入框的搜索事件监听
+    seacrhAddEventListener(searchInput)
   }
 
-  // 控制卡片风手琴
-  $('#accordionCard', window.top.document).on('click', '.collapsed', function (event) {
-    
-    let cardTitle = $(event.target)
-    let targetId = cardTitle.data('target')
-    let collapse = $(targetId, window.top.document)
-    
-    //目标元素的显示与隐藏
-    collapse.toggle(500)
-    collapse.toggleClass('show')
-
-    // 上一个元素的隐藏，如果是自身则不操作
-    if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
-      // 如果有 show的class 则去掉并隐藏
-      lastClick.hide(500)
-      lastClick.removeClass('show')
-    }
-    
-    // 如果目标卡片是打开状态，标志
-    if (collapse.hasClass('show')) {
-      lastClick = collapse
-    }
-    
-})
+  // 控制卡片风手琴的事件监听
+  switchCardAddEventListener()
 
 })
 
