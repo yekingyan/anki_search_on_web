@@ -3,7 +3,7 @@
 
 ---
 ### 效果展示(目前适配google、 bing、yahoo、百度)
-![image](display.gif)
+![image](https://github.com/yekingyan/anki_search_on_web/raw/master/display.gif)
 
 ### 安装
 #### 1、安装AnkiConnect插件
@@ -21,7 +21,7 @@
 #### 3、配置
 ##### 3.1 卡片类型
 如果你是中文的Supermemo类型，则不用设置，否则搜索结果无法显示。
-![image](card-type.png)
+![image](https://github.com/yekingyan/anki_search_on_web/raw/master/card-type.png)
 
 如果你的卡片类型字段不是"正面"、"反面"，请在脚本中修改
 ```js
