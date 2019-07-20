@@ -7,6 +7,8 @@
 // @run-at       document-start
 // @require      https://code.jquery.com/jquery-3.3.1.min.js
 // @include      https://www.google.com/*
+// @include      https://www.google.com.*/*
+// @include      https://www.google.co.*/*
 // @include      https://www.bing.com/*
 // @include      http://www.bing.com/*
 // @include      https://cn.bing.com/*
@@ -142,6 +144,7 @@
             ['bing', ['#sb_form_q', '#b_context']],
             ['yahoo', ['#yschsp', '#right']],
             ['baidu', ['#kw', '#content_right']],
+            ['anki', ['.form-control', '#content_right']],
             // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
         ])
 
@@ -621,6 +624,8 @@
 
         // 控制卡片风手琴的事件监听
         switchCardAddEventListener()
+
+        // 最右
 
     })
 
