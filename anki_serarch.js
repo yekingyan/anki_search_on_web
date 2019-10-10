@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.5
+// @version      0.6
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -38,8 +38,11 @@
     const BACK_CARK_FILES = ''
 
     // 依赖
-    const requiredScript = `
+    let requiredScript = [
+`
   <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+`,
+`
   <style>
 
   /*card*/
@@ -123,7 +126,7 @@
 
   </style>
 `
-
+    ]
     // 图片等资源的路径, 注意windows要将 反斜杠\ 换成 斜杠/
     // 需开启 web服务器
     // const media_path = `C:/Users/y/AppData/Roaming/Anki2/用户1/collection.media/`
@@ -588,7 +591,11 @@
 
     $(window.top.document).ready(() => {
         // 注入脚本
-        let html = $.parseHTML(requiredScript, window.top.document, true)
+        if (location.host === "www.baidu.com") {
+            // 不注入jquery
+            requiredScript = requiredScript.slice(1)
+        }
+        let html = $.parseHTML(requiredScript.join('\n'), window.top.document, true)
         $('body', window.top.document).append(html)
     })
 
