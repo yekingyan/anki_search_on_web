@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.6
+// @version      0.7
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -9,6 +9,7 @@
 // @include      https://www.google.com/*
 // @include      https://www.google.com.*/*
 // @include      https://www.google.co.*/*
+// @include      https://mijisou.com*/*
 // @include      https://www.bing.com/*
 // @include      http://www.bing.com/*
 // @include      https://cn.bing.com/*
@@ -148,6 +149,7 @@
             ['yahoo', ['#yschsp', '#right']],
             ['baidu', ['#kw', '#content_right']],
             ['anki', ['.form-control', '#content_right']],
+            ['mijisou', ['#q', '#sidebar_results']],
             // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
         ])
 
@@ -559,32 +561,44 @@
 
 
     let lastClick  // 记录最后一次显示或隐藏的卡片
+    let canClick = true
+    const speedTime = 300
     const switchCardAddEventListener = () => {
         /**
          * 控制卡片风手琴
+         * 目标元素(card body)的显示与隐藏
          */
         $('#accordionCard', window.top.document).on('click', '.collapsed', function (event) {
+
+            if (!canClick) {
+                console.log("点太快了，异步的我跟不上，罢工一次")
+                return
+            }
+            canClick = false
 
             let cardTitle = $(event.target)
             let targetId = cardTitle.data('target')
             let collapse = $(targetId, window.top.document)
 
-            //目标元素的显示与隐藏
-            collapse.toggle(500)
-            collapse.toggleClass('show')
-
-            // 上一个元素的隐藏，如果是自身则不操作
-            if (lastClick && lastClick.attr('id') !== collapse.attr('id')) {
-                // 如果有 show的class 则去掉并隐藏
-                lastClick.hide(500)
-                lastClick.removeClass('show')
+            if (lastClick && lastClick.attr('id') == collapse.attr('id')) {
+                // 重复点击自身的情况, 切换显示与隐藏
+                if (collapse.hasClass("show")) {
+                    collapse.removeClass("show")
+                    collapse.hide(speedTime, () => canClick = true)
+                } else {
+                    collapse.addClass("show")
+                    collapse.show(speedTime, () => canClick = true)
+                }
+            } else {
+                // 上一次点击与这一次点击的元素不同
+                if (lastClick && lastClick.hasClass("show")) {
+                    lastClick.removeClass("show")
+                    lastClick.hide(speedTime)
+                }
+                collapse.addClass("show")
+                collapse.show(speedTime, () => canClick = true)
             }
-
-            // 如果目标卡片是打开状态，标志
-            if (collapse.hasClass('show')) {
-                lastClick = collapse
-            }
-
+            lastClick = collapse
         })
     }
 
