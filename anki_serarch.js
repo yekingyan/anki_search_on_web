@@ -50,14 +50,14 @@
   /*card*/
 
   .anki-mb-1 {
-    margin-bottom: .25rem!important;
+    margin-bottom: .25em!important;
   }
 
   .anki-mb-1, .my-1 {
-    margin-bottom: .25rem!important;
+    margin-bottom: .25em!important;
   }
   .anki-rounded {
-    border-radius: .25rem!important;
+    border-radius: .25em!important;
   }
 
   /*
@@ -77,12 +77,12 @@
     background-color: #fff;
     background-clip: border-box;
     border: 1.5px solid #dfe1e5;
-    border-radius: .25rem;
+    border-radius: 0.3em;
   }
 
   /* cardheader */
   .anki-card-header:first-child {
-    border-radius: calc(.25rem - 1px) calc(.25rem - 1px) 0 0;
+    border-radius: calc(.25em - 1px) calc(.25em - 1px) 0 0;
   }
   .anki-font-weight-bold {
     font-weight: 700!important;
@@ -93,7 +93,7 @@
   }
 
   .anki-card-header {
-    padding: .75rem 1.25rem;
+    padding: .75em 1.25em;
     margin-bottom: 0;
     background-color: rgba(0,0,0,.03);
     border-bottom: 1px solid rgba(0,0,0,.125);
@@ -106,14 +106,14 @@
   .anki-card-body {
     -ms-flex: 1 1 auto;
     flex: 1 1 auto;
-    padding: .75rem 1.25rem;
+    padding: .75em 1.25em;
     border-bottom: solid 1px;
   }
 
 
   /*card footer*/
   .card-footer:last-child {
-    border-radius: 0 0 calc(.25rem - 1px) calc(.25rem - 1px);
+    border-radius: 0 0 calc(.25em - 1px) calc(.25em - 1px);
   }
 
   .anki-bg-transparent {
@@ -121,7 +121,7 @@
   }
 
   .anki-card-footer {
-    padding: .75rem 1.25rem;
+    padding: .75em 1.25em;
     background-color: rgba(0,0,0,.03);
     border-top: 1px solid rgba(0,0,0,.125);
   }
@@ -316,7 +316,7 @@
 
     let templateItem = (id, title, frontCard, backCard, show = 'show') => {
         let template = `
-    <div class="anki-card anki-border-success anki-mb-1 anki-rounded" style="min-width: 35rem; max-width: 50rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;">
+    <div class="anki-card anki-border-success anki-mb-1 anki-rounded" style="min-width: 450px; max-width: 550px; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;">
       <div class="anki-card-header bg-title anki-font-weight-bold
       anki-collapsed" id="heading${id}" data-toggle="anki-collapse" aria-expanded="false" data-target="#anki-collapse${id}" aria-controls="collapse${id}">
       ${title}
@@ -364,23 +364,6 @@
         let fit = 'width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;'
         domsArray.forEach((item, index) => {
             father.append(item)
-
-            // 卡片样式在各站点的适配
-            switch (WHERE) {
-                // case 'google': $(item).attr('style', 'min-width: 40rem; max-width: 45rem;' + fit)
-                // break
-                case 'bing': $(item).attr('style', 'min-width: 28rem; max-width: 45rem;' + fit)
-                    break
-                case 'baidu': // 如果想适配百度，需把css的rem 换算，百度的rem 有毒
-                    $(item).attr('style', 'min-width: 400px; max-width: 600px;' + fit)
-                    $(item).find('.anki-card-footer').attr('style', 'padding: 9.75px 16.25px;')
-                    $(item).find('.anki-card-body').attr('style', 'padding: 9.75px 16.25px;')
-                    $(item).find('.anki-card-header').attr('style', 'padding: 9.75px 16.25px;')
-                    break
-                // default: $(item).attr('style', 'min-width: 35rem; max-width: 45rem;' + fit)
-                // break
-            }
-
 
             // 卡片加入时只显示标题
             let collapse = $(item).find('.anki-collapse')
