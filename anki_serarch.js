@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.7
+// @version      0.7.1
+// version log   最近没用google，发现了几个非google环境的bug，修复了toggle用的css冲突
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -317,11 +318,11 @@
         let template = `
     <div class="anki-card anki-border-success anki-mb-1 anki-rounded" style="min-width: 35rem; max-width: 50rem; width:fit-content; width:-webkit-fit-content; width:-moz-fit-content;">
       <div class="anki-card-header bg-title anki-font-weight-bold
-      collapsed" id="heading${id}" data-toggle="collapse" aria-expanded="false" data-target="#collapse${id}" aria-controls="collapse${id}">
+      anki-collapsed" id="heading${id}" data-toggle="anki-collapse" aria-expanded="false" data-target="#anki-collapse${id}" aria-controls="collapse${id}">
       ${title}
       </div>
 
-      <div class="collapse ${show}"  id="collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
+      <div class="anki-collapse ${show}"  id="anki-collapse${id}" aria-labelledby="heading${id}" data-parent="#accordionCard">
         <div class="anki-card-body text-success anki-border-success" >${frontCard}</div>
         <div class="anki-card-footer anki-bg-transparent anki-border-success">${backCard}</div>
       </div>
@@ -354,8 +355,6 @@
          * targetDom： 要在页面中依附的元素
          */
 
-
-
         // 多次搜索清空旧结果
         let father = $('#accordionCard', window.top.document)
         father.empty()
@@ -384,7 +383,7 @@
 
 
             // 卡片加入时只显示标题
-            let collapse = $(item).find('.collapse')
+            let collapse = $(item).find('.anki-collapse')
             if (index !== 0) {
                 collapse.hide()
             } else {
@@ -562,14 +561,13 @@
 
     let lastClick  // 记录最后一次显示或隐藏的卡片
     let canClick = true
-    const speedTime = 300
+    const speedTime = 400
     const switchCardAddEventListener = () => {
         /**
          * 控制卡片风手琴
          * 目标元素(card body)的显示与隐藏
          */
-        $('#accordionCard', window.top.document).on('click', '.collapsed', function (event) {
-
+        $('#accordionCard', window.top.document).on('click', '.anki-collapsed', function (event) {
             if (!canClick) {
                 console.log("点太快了，异步的我跟不上，罢工一次")
                 return
@@ -579,29 +577,30 @@
             let cardTitle = $(event.target)
             let targetId = cardTitle.data('target')
             let collapse = $(targetId, window.top.document)
+            let collapseState = collapse.hasClass("show") ? "show" : "hide"
 
-            if (lastClick && lastClick.attr('id') == collapse.attr('id')) {
-                // 重复点击自身的情况, 切换显示与隐藏
-                if (collapse.hasClass("show")) {
-                    collapse.removeClass("show")
-                    collapse.hide(speedTime, () => canClick = true)
-                } else {
-                    collapse.addClass("show")
-                    collapse.show(speedTime, () => canClick = true)
-                }
-            } else {
-                // 上一次点击与这一次点击的元素不同
-                if (lastClick && lastClick.hasClass("show")) {
-                    lastClick.removeClass("show")
-                    lastClick.hide(speedTime)
-                }
-                collapse.addClass("show")
-                collapse.show(speedTime, () => canClick = true)
+            switch (collapseState) {
+                case "show":
+                    collapse.hide(speedTime, () => {
+                        canClick = true
+                        collapse.removeClass("show")
+                    })
+                    break
+                case "hide":
+                    if (lastClick && lastClick.hasClass("show")) {
+                        lastClick.removeClass("show")
+                        lastClick.hide(speedTime)
+                    }
+                    collapse.show(speedTime, () => {
+                        collapse.addClass("show")
+                        window.scroll(window.outerWidth, window.pageYOffset)
+                        canClick = true
+                    })
+                    break
             }
             lastClick = collapse
         })
     }
-
 
     $(window.top.document).ready(() => {
         // 注入脚本
@@ -629,16 +628,13 @@
             return
         }
 
-
         // 插入容器到页面
         insertContainet(targetDom)
-
 
         // 刷新，搜索一次
         search(searchInput.val(), (cards) => {
             resolveCars(cards)
         })
-
 
         // 输入框的搜索事件监听
         seacrhAddEventListener(searchInput)
@@ -646,18 +642,8 @@
         // 控制卡片风手琴的事件监听
         switchCardAddEventListener()
 
-        // 最右
 
     })
-
-    /**
-     * div class="med" id="res" 左侧搜索结果
-     * 左边 rhs_block
-     * 
-     * 
-     * <iframe src="chrome-extension://pioclpoplcdbaefihamjohnefbikjilc/SimSearchFrame.html" id="simSearchFrame" style="width: 454px; height: 265px; border: none;"></iframe>
-     * 
-     */
 
     const test = (condition, e) => {
         if (!condition) {
