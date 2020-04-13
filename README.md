@@ -11,6 +11,10 @@
 安装完成后，重启anki。
 注：anki在启动状态下才能使用本脚本
 
+##### 1.1 AnkiConnect 配置
+新版本AnkiConnect需要配置跨域，否则有报错
+![image](https://github.com/yekingyan/anki_search_on_web/raw/master/ak-cfg.png)
+
 #### 2、浏览器安装Tampermonkey
 [anki_search_on_web](https://github.com/yekingyan/anki_search_on_web/blob/master/anki_serarch.js)是油猴脚本，添加完刷新一下，就可以用了
 
