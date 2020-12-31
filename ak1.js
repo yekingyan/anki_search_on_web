@@ -1,9 +1,39 @@
-
+// ==UserScript==
+// @name         Anki_Search
+// @namespace    https://github.com/yekingyan/anki_search_on_web/
+// @version      1.0
+// version log   支持多种模板了
+// @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
+// @author       Yekingyan
+// @run-at       document-start
+// @include      https://www.google.com/*
+// @include      https://www.google.com.*/*
+// @include      https://www.google.co.*/*
+// @include      https://mijisou.com*/*
+// @include      https://www.bing.com/*
+// @include      http://www.bing.com/*
+// @include      https://cn.bing.com/*
+// @include      https://search.yahoo.com/*
+// @include      https://www.baidu.com/*
+// @include      http://www.baidu.com/*
+// @include      https://ankiweb.net/*
+// @grant        unsafeWindow
+// ==/UserScript==
 
 const local_url = 'http://127.0.0.1:8765'
 // const SEARCH_FROM = '-deck:English'
 const SEARCH_FROM = ''
 const MAX_CARS = 37
+const HOST_MAP = new Map([
+    ['google', ['.gLFyf', '#rhs']],
+    ['bing', ['#sb_form_q', '#b_context']],
+    ['yahoo', ['#yschsp', '#right']],
+    ['baidu', ['#kw', '#content_right']],
+    ['anki', ['.form-control', '#content_right']],
+    ['mijisou', ['#q', '#sidebar_results']],
+    // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
+])
+
 
 const URL = local_url
 
@@ -31,30 +61,23 @@ g_counterReqSrc.next()
 
 
 // dom
+const getDomByClassOrID = () => {
+
+}
+
+
 const getHostSearchInputAndTarget = () => {
     /**
      * 获取当前网站的搜索输入框 与 需要插入的位置
      *  */
     let host = window.location.host
-    let searchInput = [undefined]  // 搜索框
-    let targetDom = [undefined]    // 左边栏的父节点
+    let searchInput = null  // 搜索框
+    let targetDom = null    // 左边栏的父节点
 
-    let HOST_MAP = new Map([
-        ['google', ['.gLFyf', '#rhs']],
-        ['bing', ['#sb_form_q', '#b_context']],
-        ['yahoo', ['#yschsp', '#right']],
-        ['baidu', ['#kw', '#content_right']],
-        ['anki', ['.form-control', '#content_right']],
-        ['mijisou', ['#q', '#sidebar_results']],
-        // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
-    ])
-
-    let where = null
     for (let [key, value] of HOST_MAP) {
         if (host.includes(key)) {
-            where = key
-            searchInput = $(value[0], window.top.document)
-            targetDom = $(value[1], window.top.document)
+            searchInput = window.top.document.querySelector(value[0])
+            targetDom = window.top.document.querySelector(value[1])
             break
         }
     }
@@ -186,7 +209,7 @@ class Card {
         } else {
             let hideClass = 'anki-collapsed'
             this.isCollapse = show
-            let bodyDom = document.getElementById(`body-${this.id}`)
+            let bodyDom = window.top.document.getElementById(`body-${this.id}`)
             if (!show) {
                 bodyDom.classList.add(hideClass)
             } else {
@@ -196,7 +219,7 @@ class Card {
     }
 
     async listenClickEvent() {
-        let titleDom = document.getElementById(`title-${this.id}`)
+        let titleDom = window.top.document.getElementById(`title-${this.id}`)
         titleDom.addEventListener('click', async () => {
             await this.onClick()
         })
@@ -338,7 +361,52 @@ function formatCardsData(cardsData) {
 }
 
 
-window.onload = async function () {
+// 容器
+const CONTAINER_ID = 'anki-container'
+const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
+const insertContainet = (targetDom) => {
+    targetDom.insertAdjacentHTML('afterbegin', CONTAINER)
+}
+
+
+async function main() {
+    // 注入css
+    headDom = window.top.document.getElementsByTagName("HEAD")[0]
+
+    // 获取输入框 与 搜索值
+    let [searchInput, targetDom] = getHostSearchInputAndTarget()
+
+    // 终止搜索
+    if (!searchInput) {
+        log('在页面没有找到搜索框', searchInput)
+        return
+    }
+    if (!targetDom) {
+        log('在页面没有找到可依附的元素', targetDom)
+        return
+    }
+
+    // 插入容器到页面
+    insertContainet(targetDom)
+
+    // 刷新，搜索一次
+    let cardsData = await search(searchInput.value)
+    let cards = formatCardsData(cardsData)
+    await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
+
+    let parent = window.top.document.getElementById(CONTAINER_ID)
+    cards.forEach(async (card) => {
+        parent.insertAdjacentHTML('beforeend', card.cardHTML)
+        await card.listenClickEvent()
+        card.collapse(false)
+    })
+
+    // 输入框的搜索事件监听 
+
+}
+
+
+async function debug() {
     let host = window.location.host
     let cardsData = await search('ascii')
     // let cardsData = await search("拼接字段并删除多余的空格")
@@ -363,6 +431,9 @@ window.onload = async function () {
 
     console.log("onllllllllllload 22")
 }
+
+
+window.onload = main
 
 
 const style = `

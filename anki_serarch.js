@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      0.7.1
-// version log   最近没用google，发现了几个非google环境的bug，修复了toggle用的css冲突
+// @version      1.0
+// version log   支持多种模板了
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
-// @require      https://code.jquery.com/jquery-3.3.1.min.js
 // @include      https://www.google.com/*
 // @include      https://www.google.com.*/*
 // @include      https://www.google.co.*/*
