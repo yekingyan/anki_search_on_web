@@ -84,17 +84,18 @@ const getHostSearchInputAndTarget = () => {
 
 
 class Card {
-    constructor(id, index, frontCardContent, backCardData) {
+    constructor(id, index, frontCardContent, backCardData, parent) {
         this.id = id
         this.index = index
-        this.isExtend = index === 1
+        this.isfirstChild = index === 1
         this.frontCardContent = frontCardContent  // strContent
         this.backCardData = backCardData  // [order, field, content]
         this.backCardData.sort((i, j) => i > j ? 1 : -1)
+        this.parent = parent
 
         this._cardHTML = null
         this._title = null
-        this.isCollapse = null
+        this.isExtend = null
     }
 
     // Getter
@@ -198,19 +199,27 @@ class Card {
         return templateCard
     }
 
-    async collapse(show) {
-        if (this.isCollapse === show) {
+    async setExtend(show) {
+        if (this.isExtend === show) {
             return
         } else {
             let hideClass = 'anki-collapsed'
-            this.isCollapse = show
+            this.isExtend = show
             let bodyDom = window.top.document.getElementById(`body-${this.id}`)
-            if (!show) {
-                bodyDom.classList.add(hideClass)
-            } else {
+            if (show) {
                 bodyDom.classList.remove(hideClass)
+            } else {
+                bodyDom.classList.add(hideClass)
             }
         }
+    }
+
+    async tryCollapse() {
+        if (!this.isfirstChild) {
+            await this.setExtend(false)
+            return true
+        }
+        return false
     }
 
     async listenClickEvent() {
@@ -221,12 +230,68 @@ class Card {
     }
 
     async onClick() {
-        let show = !this.isCollapse
-        await this.collapse(show)
+        let show = !this.isExtend
+        await this.setExtend(show)
+        this.parent.onCardClick(this)
         window.scroll(window.outerWidth, window.pageYOffset)
     }
 
 }
+
+
+class CardMgr {
+    constructor () {
+        this.cards = []
+    }
+
+    formatCardsData(cardsData) {
+        /** turn cardData 2 cardObj */
+        let cards = []
+        cardsData.forEach((item, index) => {
+            let id = item.noteId
+            let frontCard = []
+            let backCards = []
+            for (const [k, v] of Object.entries(item.fields)) {
+                if (v.order === 0) {
+                    frontCard = v.value
+                    continue
+                }
+                backCards.push([v.order, k, v.value])
+            }
+            let card = new Card(id, index+1, frontCard, backCards, this)
+            cards.push(card)
+        })
+        return cards
+    }
+
+    async insertCardsDom(cards) {
+        clearContainer()
+        cards.forEach(async (card) => {
+            getContainer().insertAdjacentHTML('beforeend', card.cardHTML)
+            await card.listenClickEvent()
+            card.tryCollapse()
+        })
+    }
+
+    async searchAndInsertCard(searchValue) {
+        let cardsData = await search(searchValue)
+        let cards = this.formatCardsData(cardsData)
+        this.cards = cards
+        await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
+        this.insertCardsDom(cards)
+    }
+
+    onCardClick(card) {
+        this.cards.forEach( i => {
+            if(i !== card) {
+                i.setExtend(false)
+            }
+        })
+    }
+
+}
+
+let cardMgr = new CardMgr()
 
 
 // request and data
@@ -334,48 +399,23 @@ async function search(searchText) {
 }
 
 
-function formatCardsData(cardsData) {
-    /** turn cardData 2 cardObj */
-    let cards = []
-    cardsData.forEach((item, index) => {
-        let id = item.noteId
-        let frontCard = []
-        let backCards = []
-        for (const [k, v] of Object.entries(item.fields)) {
-            if (v.order === 0) {
-                frontCard = v.value
-                continue
-            }
-            backCards.push([v.order, k, v.value])
-        }
-        let card = new Card(id, index+1, frontCard, backCards)
-        cards.push(card)
-    })
-    return cards
-}
-
-
-async function searchAndInsertCard(searchValue) {
-    let cardsData = await search(searchValue)
-    let cards = formatCardsData(cardsData)
-    await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
-
-    let container = window.top.document.getElementById(CONTAINER_ID)
-    container.innerHTML = ''
-    cards.forEach(async (card) => {
-        container.insertAdjacentHTML('beforeend', card.cardHTML)
-        await card.listenClickEvent()
-        card.collapse(false)
-    })
-}
-
 
 // 容器
 const CONTAINER_ID = 'anki-container'
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
-const insertContainet = (targetDom) => {
+function insertContainet(targetDom) {
     targetDom.insertAdjacentHTML('afterbegin', CONTAINER)
 }
+
+
+function getContainer() {
+    return window.top.document.getElementById(CONTAINER_ID)
+}
+
+function clearContainer() {
+    getContainer().innerHTML = ''
+}
+
 
 
 // listen input
@@ -385,7 +425,7 @@ function addInputEventListener(searchInput) {
         searchText = event.srcElement.value
         setTimeout(() => {
             if (event.timeStamp === lastInputTs) {
-                searchAndInsertCard(searchText)
+                cardMgr.searchAndInsertCard(searchText)
             }
         }, 700)
 
@@ -395,14 +435,15 @@ function addInputEventListener(searchInput) {
 }
 
 
+
 async function main() {
     // 注入css
-    headDom = window.top.document.getElementsByTagName("HEAD")[0]
+    let headDom = window.top.document.getElementsByTagName("HEAD")[0]
     headDom.insertAdjacentHTML('beforeend', style)
+
 
     // 获取输入框 与 搜索值
     let [searchInput, targetDom] = getHostSearchInputAndTarget()
-
     // 终止搜索
     if (!searchInput) {
         log('在页面没有找到搜索框', searchInput)
@@ -416,12 +457,13 @@ async function main() {
     // 插入容器到页面
     insertContainet(targetDom)
 
+    // 输入框的搜索事件监听 
+    addInputEventListener(searchInput, cardMgr)
+
     // 刷新，搜索一次
     let searchText = searchInput.value
-    searchAndInsertCard(searchText)
+    cardMgr.searchAndInsertCard(searchText)
 
-    // 输入框的搜索事件监听 
-    addInputEventListener(searchInput)
 }
 
 
