@@ -84,7 +84,6 @@ class Card {
         this.isPlaying = false
     }
 
-    // Getter
     get title() {
         let title = ''
         let parseTitle = this.frontCardContent.split(/<div.*?>/)
@@ -147,7 +146,7 @@ class Card {
 
     get cardHTML() {
         if (!this._cardHTML) {
-            throw "pls requestCardHTML first"
+            throw "pls requestCardSrc first"
         }
         return this._cardHTML
     }
@@ -156,7 +155,6 @@ class Card {
         this._cardHTML = cardHTML
     }
 
-    // Method
     async replaceImg(templateCard) {
         let reSrc = /src="(.*?)"/g
         let reFilename = /src="(?<filename>.*?)"/
@@ -179,7 +177,7 @@ class Card {
         return temp
     }
 
-    async requestCardHTML() {
+    async requestCardSrc() {
         let templateCard = await this.replaceImg(this.templateCard)
         this.cardHTML = templateCard
         return templateCard
@@ -212,6 +210,7 @@ class Card {
                 setTimeout(() => {
                     if (this.isPlaying) {
                         clearInterval(timerId)
+                        log("anki animition play time out")
                         reject()
                     }
                 }, 5000)
@@ -219,15 +218,15 @@ class Card {
         }
     }
 
-    async tryCollapse() {
+    tryCollapse() {
         if (!this.isfirstChild) {
-            await this.setExtend(false)
+            this.setExtend(false)
             return
         }
         this.isExtend = true
     }
 
-    listenClickEvent() {
+    listenEvent() {
         this.titleDom = window.top.document.getElementById(`title-${this.id}`)
         this.titleDom.addEventListener('click', () => {
             this.onClick()
@@ -277,11 +276,11 @@ class CardMgr {
         return cards
     }
 
-    async insertCardsDom(cards) {
+    insertCardsDom(cards) {
         clearContainer()
-        cards.forEach(async (card) => {
+        cards.forEach(card => {
             getContainer().insertAdjacentHTML('beforeend', card.cardHTML)
-            await card.listenClickEvent()
+            card.listenEvent()
             card.tryCollapse()
         })
     }
@@ -290,7 +289,7 @@ class CardMgr {
         let cardsData = await search(searchValue)
         let cards = this.formatCardsData(cardsData)
         this.cards = cards
-        await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
+        await Promise.all(cards.map(async (card) => await card.requestCardSrc()))
         this.insertCardsDom(cards)
     }
 
