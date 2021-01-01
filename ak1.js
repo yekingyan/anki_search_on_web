@@ -6,24 +6,28 @@
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
-// @include      https://www.google.com/*
-// @include      https://www.google.com.*/*
-// @include      https://www.google.co.*/*
-// @include      https://mijisou.com*/*
-// @include      https://www.bing.com/*
-// @include      http://www.bing.com/*
-// @include      https://cn.bing.com/*
-// @include      https://search.yahoo.com/*
-// @include      https://www.baidu.com/*
-// @include      http://www.baidu.com/*
-// @include      https://ankiweb.net/*
+// @include      *://www.google.com/*
+// @include      *://www.google.com.*/*
+// @include      *://www.google.co.*/*
+// @include      *://mijisou.com/*
+// @include      *://*.bing.com/*
+// @include      *://search.yahoo.com/*
+// @include      *://www.baidu.com/*
+// @include      *://ankiweb.net/*
 // @grant        unsafeWindow
 // ==/UserScript==
 
 const local_url = 'http://127.0.0.1:8765'
 // const SEARCH_FROM = '-deck:English'
 const SEARCH_FROM = ''
-const MAX_CARS = 37
+const MAX_CARDS = 37
+
+// set card size
+const MIN_CARD_WIDTH = 30
+const MAX_CARD_WIDTH = 40
+const MAX_CARD_HEIGHT = 70
+
+// adaptor
 const HOST_MAP = new Map([
     ['local', ['#anki-q', '#anki-card']],
     ['google', ['.gLFyf', '#rhs']],
@@ -37,6 +41,7 @@ const HOST_MAP = new Map([
 
 
 const URL = local_url
+const MAX_IMG_WIDTH = MAX_CARD_WIDTH - 3
 
 // utils
 const log = function () {
@@ -115,7 +120,10 @@ class Card {
             this.backCardData.forEach(item => {
                 let order, field, content
                 [order, field, content] = item
-                back += `<div class="anki-sub-title"><em>${field}</em></div><div>${content}</div><br>`
+                if (content.length > 0) {
+                    back += `<div class="anki-sub-title"><em>${field}</em></div>
+                             <div calss="anki-sub-back-card">${content}</div><br>`
+                }
             })
         }
         return back
@@ -123,11 +131,8 @@ class Card {
 
     get templateCard() {
         let template = `
-            <div class="anki-card anki-width">
-              <div class="anki-title" id="title-${this.id}">
-              ${this.title}
-              </div>
-
+            <div class="anki-card anki-card-size">
+              <div class="anki-title" id="title-${this.id}">${this.title}</div>
               <div class="anki-body" id="body-${this.id}">
                 <div class="anki-front-card">${this.forntCard}</div>
                 <div class="anki-back-card">${this.backCard}</div>
@@ -182,13 +187,22 @@ class Card {
             return
         } else {
             let hideClass = 'anki-collapsed'
+            let showClass = 'anki-extend'
             this.isExtend = show
             let bodyDom = window.top.document.getElementById(`body-${this.id}`)
             if (show) {
+                bodyDom.classList.add(showClass)
                 bodyDom.classList.remove(hideClass)
             } else {
                 bodyDom.classList.add(hideClass)
+                bodyDom.classList.remove(showClass)
             }
+
+            bodyDom.addEventListener("animationend", () => {
+                if (show) {
+                    window.scroll(window.outerWidth, window.pageYOffset)
+                }
+            })
         }
     }
 
@@ -211,7 +225,6 @@ class Card {
         let show = !this.isExtend
         await this.setExtend(show)
         this.parent.onCardClick(this)
-        window.scroll(window.outerWidth, window.pageYOffset)
     }
 
 }
@@ -363,7 +376,7 @@ async function search(searchText) {
     try {
         let idRes = await _searchByText(searchText)
         ids = idRes.result
-        ids.length >= MAX_CARS ? ids.length = MAX_CARS : null
+        ids.length >= MAX_CARDS ? ids.length = MAX_CARDS : null
         let cardRes = await _searchByID(ids)
         cards = cardRes.result
         log(
@@ -456,6 +469,7 @@ async function main() {
     // 刷新，搜索一次
     let searchText = searchInput.value
     cardMgr.searchAndInsertCard(searchText)
+    // cardMgr.searchAndInsertCard('mysql nam')
 }
 
 
@@ -464,16 +478,15 @@ window.onload = main
 
 const style = `
   <style>
-
   /*card*/
-
-  .anki-width {
-    min-width: 450px; 
-    max-width: 550px; 
+  .anki-card-size {
+    min-width: ${MIN_CARD_WIDTH}em; 
+    max-width: ${MAX_CARD_WIDTH}em;
+    max-height: ${MAX_CARD_HEIGHT}em;
   }
 
   .anki-img-width {
-    max-width: 520px; 
+    max-width: ${MAX_IMG_WIDTH}em; 
   }
  
   .anki-card {
@@ -483,60 +496,81 @@ const style = `
     -ms-flex-direction: column;
     flex-direction: column;
     word-wrap: break-word;
-    background-color: #fff;
-    background-clip: border-box;
-    border: 1.5px solid #dfe1e5;
     width:fit-content; 
     width:-webkit-fit-content;
     width:-moz-fit-content;
-    margin-bottom: .4em!important;
-    border-radius: .4em!important;
+    margin-bottom: .25em;
+    border: .1em solid #69928f;
+    // border-radius: calc(.7em - 1px);
+    border-radius: .7em;
+  }
+
+  .anki-body {
+    overflow-x: visible;
+    overflow-y: auto;
   }
 
   /* card title */
-  .anki-title:first-child {
-    border-radius: calc(.25em - 1px) calc(.25em - 1px) 0 0;
-    background-color: #c6e1e4!important;
+  .anki-title {
+    padding: .75em;
+    margin: 0em;
+    font-weight: 700;
+    background-color: #e0f6f9;
+    // border-radius: calc(.5em - 1px);
+    border-radius: .7em;
+
+    transition-property: all;
+    transition-duration: 1.5s;
+    transition-timing-function: ease-out;
   }
 
-  .anki-title {
-    padding: .75em 1.25em;
-    margin-bottom: 0;
-    border-bottom: 1px solid rgba(0,0,0,.125);
-    font-weight: 700!important;
-    background-color: #c6e1e4!important;
+  .anki-title:hover{
+    // background-color: #9791b1;
+    background-color: #d2e4f9;
   }
 
   .anki-sub-title {
     color: #5F9EA0;
   }
 
-  /* front card*/
   .anki-front-card {
-    -ms-flex: 1 1 auto;
-    flex: 1 1 auto;
-    padding: .75em 1.25em;
-    border-bottom: solid 1px;
-    color: #28a745!important;
-  }
-
-
-  /*back card*/
-  .anki-back-card:last-child {
-    border-radius: 0 0 calc(.25em - 1px) calc(.25em - 1px);
+    padding: .75em;
+    border-bottom: solid .3em #c6e1e4;
   }
 
   .anki-back-card {
-    padding: .75em 1.25em;
-    background-color: rgba(0,0,0,.03);
-    border-top: 1px solid rgba(0,0,0,.125);
-    background-color: transparent!important;
+    padding: .75em .75em;
   }
 
   .anki-collapsed {
-      visibility: hidden;
-      display: none;
+    overflow: hidden;
+    animation-name: collapsed;
+    animation-duration: .3s;
+    animation-timing-function: ease-out;
+    animation-fill-mode:forwards;
+    animation-direction: normal;
   }
+
+  .anki-extend {
+    overflow-x: visible;
+    animation-name: extend;
+    animation-duration: .3s;
+    animation-timing-function: ease-in;
+    animation-fill-mode:forwards;
+    animation-direction: normal;
+  }
+
+  @keyframes collapsed
+    {
+      0%   {max-height: ${MAX_CARD_HEIGHT}em; max-width: ${MAX_CARD_WIDTH}em;}
+      100% {max-height: 0em; max-width: 30em;}
+    }
+
+  @keyframes extend
+    {
+      0%   {max-height: 0em; max-width: ${MIN_CARD_WIDTH}em;}
+      100% {max-height: ${MAX_CARD_WIDTH}em; max-width: ${MAX_CARD_WIDTH}em;}
+    }
 
   </style>
 `

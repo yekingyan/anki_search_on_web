@@ -139,11 +139,12 @@
         /**
          * 获取当前网站的搜索输入框 与 需要插入的位置
          *  */
-        let host = window.location.host
+        let host = window.location.host || 'local'
         let searchInput = [undefined]  // 搜索框
         let targetDom = [undefined]    // 左边栏的父节点
 
         let HOST_MAP = new Map([
+            ['local', ['#anki-q', '#anki-card']],
             ['google', ['.gLFyf', '#rhs']],
             ['bing', ['#sb_form_q', '#b_context']],
             ['yahoo', ['#yschsp', '#right']],
