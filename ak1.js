@@ -31,6 +31,7 @@ const HOST_MAP = new Map([
     ['baidu', ['#kw', '#content_right']],
     ['anki', ['.form-control', '#content_right']],
     ['mijisou', ['#q', '#sidebar_results']],
+    ['', ['#anki-q', '#anki-card']]
     // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
 ])
 
@@ -61,11 +62,6 @@ g_counterReqSrc.next()
 
 
 // dom
-const getDomByClassOrID = () => {
-
-}
-
-
 const getHostSearchInputAndTarget = () => {
     /**
      * 获取当前网站的搜索输入框 与 需要插入的位置
@@ -190,7 +186,6 @@ class Card {
             let base64Img = formatBase64Img(res)
             let orgImg = `<img src="${filename}" />`
             let replaceImg = `<img class="anki-img-width" src="${base64Img}" />`
-            // style="max-width: 500px;" 
             temp = temp.replace(orgImg, replaceImg)
         }))
 
@@ -308,7 +303,7 @@ async function searchImg(filename) {
         g_counterReqSrc.next()
         return res.result
     } catch (error) {
-        console.log('Request searchImg Failed', error)
+        log('Request searchImg Failed', error, filename)
     }
 }
 
@@ -319,12 +314,11 @@ async function search(searchText) {
      * searchValue: 搜索框的内容
      */
     if (searchText.length === 0) {
-        return
+        return []
     }
     try {
         let idRes = await _searchByText(searchText)
         ids = idRes.result
-        // 只要前37个结果
         ids.length >= MAX_CARS ? ids.length = MAX_CARS : null
         let cardRes = await _searchByID(ids)
         cards = cardRes.result
@@ -335,7 +329,7 @@ async function search(searchText) {
         )
         return cards
     } catch (error) {
-        console.log('Request search Failed', error)
+        log('Request search Failed', error, searchText)
     }
 }
 
@@ -361,6 +355,21 @@ function formatCardsData(cardsData) {
 }
 
 
+async function searchAndInsertCard(searchValue) {
+    let cardsData = await search(searchValue)
+    let cards = formatCardsData(cardsData)
+    await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
+
+    let container = window.top.document.getElementById(CONTAINER_ID)
+    container.innerHTML = ''
+    cards.forEach(async (card) => {
+        container.insertAdjacentHTML('beforeend', card.cardHTML)
+        await card.listenClickEvent()
+        card.collapse(false)
+    })
+}
+
+
 // 容器
 const CONTAINER_ID = 'anki-container'
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
@@ -369,9 +378,27 @@ const insertContainet = (targetDom) => {
 }
 
 
+// listen input
+function addInputEventListener(searchInput) {
+    function onSearchTextInput(event) {
+        lastInputTs = event.timeStamp
+        searchText = event.srcElement.value
+        setTimeout(() => {
+            if (event.timeStamp === lastInputTs) {
+                searchAndInsertCard(searchText)
+            }
+        }, 700)
+
+    }
+    let lastInputTs, searchText
+    searchInput.addEventListener('input', onSearchTextInput)
+}
+
+
 async function main() {
     // 注入css
     headDom = window.top.document.getElementsByTagName("HEAD")[0]
+    headDom.insertAdjacentHTML('beforeend', style)
 
     // 获取输入框 与 搜索值
     let [searchInput, targetDom] = getHostSearchInputAndTarget()
@@ -390,19 +417,11 @@ async function main() {
     insertContainet(targetDom)
 
     // 刷新，搜索一次
-    let cardsData = await search(searchInput.value)
-    let cards = formatCardsData(cardsData)
-    await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
-
-    let parent = window.top.document.getElementById(CONTAINER_ID)
-    cards.forEach(async (card) => {
-        parent.insertAdjacentHTML('beforeend', card.cardHTML)
-        await card.listenClickEvent()
-        card.collapse(false)
-    })
+    let searchText = searchInput.value
+    searchAndInsertCard(searchText)
 
     // 输入框的搜索事件监听 
-
+    addInputEventListener(searchInput)
 }
 
 
