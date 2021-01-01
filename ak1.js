@@ -25,13 +25,13 @@ const local_url = 'http://127.0.0.1:8765'
 const SEARCH_FROM = ''
 const MAX_CARS = 37
 const HOST_MAP = new Map([
+    ['local', ['#anki-q', '#anki-card']],
     ['google', ['.gLFyf', '#rhs']],
     ['bing', ['#sb_form_q', '#b_context']],
     ['yahoo', ['#yschsp', '#right']],
     ['baidu', ['#kw', '#content_right']],
     ['anki', ['.form-control', '#content_right']],
     ['mijisou', ['#q', '#sidebar_results']],
-    ['', ['#anki-q', '#anki-card']]
     // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
 ])
 
@@ -59,28 +59,6 @@ let g_counterReqText = counter()
 let g_counterReqSrc = counter()
 g_counterReqText.next()
 g_counterReqSrc.next()
-
-
-// dom
-const getHostSearchInputAndTarget = () => {
-    /**
-     * 获取当前网站的搜索输入框 与 需要插入的位置
-     *  */
-    let host = window.location.host
-    let searchInput = null  // 搜索框
-    let targetDom = null    // 左边栏的父节点
-
-    for (let [key, value] of HOST_MAP) {
-        if (host.includes(key)) {
-            searchInput = window.top.document.querySelector(value[0])
-            targetDom = window.top.document.querySelector(value[1])
-            break
-        }
-    }
-
-    return [searchInput, targetDom]
-}
-
 
 
 class Card {
@@ -217,9 +195,9 @@ class Card {
     async tryCollapse() {
         if (!this.isfirstChild) {
             await this.setExtend(false)
-            return true
+            return
         }
-        return false
+        this.isExtend = true
     }
 
     async listenClickEvent() {
@@ -281,15 +259,16 @@ class CardMgr {
         this.insertCardsDom(cards)
     }
 
-    onCardClick(card) {
-        this.cards.forEach( i => {
-            if(i !== card) {
-                i.setExtend(false)
+    onCardClick(curCard) {
+        this.cards.forEach( card => {
+            if(card !== curCard) {
+                card.setExtend(false)
             }
         })
     }
 
 }
+
 
 let cardMgr = new CardMgr()
 
@@ -399,8 +378,27 @@ async function search(searchText) {
 }
 
 
+// dom
+const getHostSearchInputAndTarget = () => {
+    /**
+     * 获取当前网站的搜索输入框 与 需要插入的位置
+     *  */
+    let host = window.location.host || 'local'
+    let searchInput = null  // 搜索框
+    let targetDom = null    // 左边栏的父节点
 
-// 容器
+    for (let [key, value] of HOST_MAP) {
+        if (host.includes(key)) {
+            searchInput = window.top.document.querySelector(value[0])
+            targetDom = window.top.document.querySelector(value[1])
+            break
+        }
+    }
+
+    return [searchInput, targetDom]
+}
+
+
 const CONTAINER_ID = 'anki-container'
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
 function insertContainet(targetDom) {
@@ -441,10 +439,8 @@ async function main() {
     let headDom = window.top.document.getElementsByTagName("HEAD")[0]
     headDom.insertAdjacentHTML('beforeend', style)
 
-
-    // 获取输入框 与 搜索值
+    // 获取输入框 与 容器挂载点
     let [searchInput, targetDom] = getHostSearchInputAndTarget()
-    // 终止搜索
     if (!searchInput) {
         log('在页面没有找到搜索框', searchInput)
         return
@@ -454,43 +450,12 @@ async function main() {
         return
     }
 
-    // 插入容器到页面
     insertContainet(targetDom)
-
-    // 输入框的搜索事件监听 
-    addInputEventListener(searchInput, cardMgr)
+    addInputEventListener(searchInput)
 
     // 刷新，搜索一次
     let searchText = searchInput.value
     cardMgr.searchAndInsertCard(searchText)
-
-}
-
-
-async function debug() {
-    let host = window.location.host
-    let cardsData = await search('ascii')
-    // let cardsData = await search("拼接字段并删除多余的空格")
-    // let cardsData = await search("t")
-    // A holiday is a da
-    log("cardsData", cardsData)
-    let cards = formatCardsData(cardsData)
-    console.log("cards", cards)
-
-
-    // log("11111", cards[0].cardHTML)
-    headDom = document.getElementsByTagName("HEAD")[0]
-    headDom.insertAdjacentHTML('beforeend', style)
-    let parent = document.getElementById('card')
-    await Promise.all(cards.map(async (card) => await card.requestCardHTML()))
-    cards.forEach(async (card) => {
-        // log(card.cardHTML)
-        parent.insertAdjacentHTML('beforeend', card.cardHTML)
-        await card.listenClickEvent()
-        card.collapse(false)
-    })
-
-    console.log("onllllllllllload 22")
 }
 
 
