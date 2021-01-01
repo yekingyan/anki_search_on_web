@@ -79,6 +79,9 @@ class Card {
         this._cardHTML = null
         this._title = null
         this.isExtend = null
+        this.bodyDom = null
+        this.titleDom = null
+        this.isPlaying = false
     }
 
     // Getter
@@ -189,19 +192,29 @@ class Card {
             let hideClass = 'anki-collapsed'
             let showClass = 'anki-extend'
             this.isExtend = show
-            let bodyDom = window.top.document.getElementById(`body-${this.id}`)
+
             if (show) {
-                bodyDom.classList.add(showClass)
-                bodyDom.classList.remove(hideClass)
+                this.bodyDom.classList.add(showClass)
+                this.bodyDom.classList.remove(hideClass)
             } else {
-                bodyDom.classList.add(hideClass)
-                bodyDom.classList.remove(showClass)
+                this.bodyDom.classList.add(hideClass)
+                this.bodyDom.classList.remove(showClass)
             }
 
-            bodyDom.addEventListener("animationend", () => {
-                if (show) {
-                    window.scroll(window.outerWidth, window.pageYOffset)
-                }
+            this.isPlaying = true
+            await new Promise((resolve, reject) => {
+                let timerId = setInterval(() => {
+                    if (!this.isPlaying) {
+                        clearInterval(timerId)
+                        resolve()
+                    }
+                }, 100)
+                setTimeout(() => {
+                    if (this.isPlaying) {
+                        clearInterval(timerId)
+                        reject()
+                    }
+                }, 5000)
             })
         }
     }
@@ -214,17 +227,26 @@ class Card {
         this.isExtend = true
     }
 
-    async listenClickEvent() {
-        let titleDom = window.top.document.getElementById(`title-${this.id}`)
-        titleDom.addEventListener('click', async () => {
-            await this.onClick()
+    listenClickEvent() {
+        this.titleDom = window.top.document.getElementById(`title-${this.id}`)
+        this.titleDom.addEventListener('click', () => {
+            this.onClick()
+        })
+
+        this.bodyDom = window.top.document.getElementById(`body-${this.id}`)
+        this.bodyDom.addEventListener("animationend", () => {
+            this.isPlaying = false
         })
     }
 
     async onClick() {
+        this.parent.onCardClick(this)
         let show = !this.isExtend
         await this.setExtend(show)
-        this.parent.onCardClick(this)
+        if (show) {
+            window.scroll(window.outerWidth, window.pageYOffset)
+            log("scroll", this.id)
+        }
     }
 
 }
