@@ -169,8 +169,8 @@ class Card {
             let filename = i.match(reFilename).groups.filename
             let res = await searchImg(filename)
             let base64Img = formatBase64Img(res)
-            let orgImg = `<img src="${filename}" />`
-            let replaceImg = `<img class="anki-img-width" src="${base64Img}" />`
+            let orgImg = `<img src="${filename}"`
+            let replaceImg = `<img class="anki-img-width" src="${base64Img}"`
             temp = temp.replace(orgImg, replaceImg)
         }))
 
@@ -198,23 +198,6 @@ class Card {
                 this.bodyDom.classList.add(hideClass)
                 this.bodyDom.classList.remove(showClass)
             }
-
-            this.isPlaying = true
-            await new Promise((resolve, reject) => {
-                let timerId = setInterval(() => {
-                    if (!this.isPlaying) {
-                        clearInterval(timerId)
-                        resolve()
-                    }
-                }, 100)
-                setTimeout(() => {
-                    if (this.isPlaying) {
-                        clearInterval(timerId)
-                        log("anki animition play time out")
-                        reject()
-                    }
-                }, 5000)
-            })
         }
     }
 
@@ -234,18 +217,16 @@ class Card {
 
         this.bodyDom = window.top.document.getElementById(`body-${this.id}`)
         this.bodyDom.addEventListener("animationend", () => {
-            this.isPlaying = false
+            if (this.isExtend) {
+                window.scroll(window.outerWidth, window.pageYOffset)
+            }
         })
     }
 
-    async onClick() {
+    onClick() {
         this.parent.onCardClick(this)
         let show = !this.isExtend
-        await this.setExtend(show)
-        if (show) {
-            window.scroll(window.outerWidth, window.pageYOffset)
-            log("scroll", this.id)
-        }
+        this.setExtend(show)
     }
 
 }
