@@ -2,7 +2,7 @@
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
 // @version      1.0
-// version log   支持多种模板了
+// version log   支持多种卡片模板了。去除了外部依赖，修复一些兼容性问题
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -181,14 +181,19 @@ class Card {
         return templateCard
     }
 
+    showSelTitleClass(show) {
+        let selTitleClass = 'anki-title-sel'
+        show 
+            ? this.titleDom.classList.add(selTitleClass)
+            : this.titleDom.classList.remove(selTitleClass)
+    }
+
     async setExtend(show) {
         if (this.isExtend === show) {
             return
         } else {
             let hideClass = 'anki-collapsed'
             let showClass = 'anki-extend'
-            this.isExtend = show
-
             if (show) {
                 this.bodyDom.classList.add(showClass)
                 this.bodyDom.classList.remove(hideClass)
@@ -196,6 +201,9 @@ class Card {
                 this.bodyDom.classList.add(hideClass)
                 this.bodyDom.classList.remove(showClass)
             }
+
+            this.isExtend = show
+            this.showSelTitleClass(show)
         }
     }
 
@@ -205,6 +213,7 @@ class Card {
             return
         }
         this.isExtend = true
+        this.showSelTitleClass(true)
     }
 
     listenEvent() {
@@ -270,6 +279,11 @@ class CardMgr {
         this.cards = cards
         await Promise.all(cards.map(async (card) => await card.requestCardSrc()))
         this.insertCardsDom(cards)
+        log(
+            `total req: ${g_counterReqText.next(-1).value + g_counterReqSrc.next(-1).value}\n`,
+            `req searchText: ${g_counterReqText.next(-1).value}\n`,
+            `req searchSrc: ${g_counterReqSrc.next(-1).value}\n`,
+        )
     }
 
     onCardClick(curCard) {
@@ -379,11 +393,6 @@ async function search(searchText) {
         ids.length >= MAX_CARDS ? ids.length = MAX_CARDS : null
         let cardRes = await _searchByID(ids)
         cards = cardRes.result
-        log(
-            `total req: ${g_counterReqText.next(-1).value + g_counterReqSrc.next(-1).value}\n`,
-            `req searchText: ${g_counterReqText.next(-1).value}\n`,
-            `req searchSrc: ${g_counterReqSrc.next(-1).value}\n`,
-        )
         return cards
     } catch (error) {
         log('Request search Failed', error, searchText)
@@ -469,7 +478,6 @@ async function main() {
     // 刷新，搜索一次
     let searchText = searchInput.value
     cardMgr.searchAndInsertCard(searchText)
-    // cardMgr.searchAndInsertCard('mysql nam')
 }
 
 
@@ -524,6 +532,13 @@ const style = `
     transition-timing-function: ease-out;
   }
 
+  .anki-title-sel {
+      animation-name: select-title;
+      animation-duration: 5s;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+  }
+
   .anki-title:hover{
     // background-color: #9791b1;
     background-color: #d2e4f9;
@@ -570,6 +585,13 @@ const style = `
     {
       0%   {max-height: 0em; max-width: ${MIN_CARD_WIDTH}em;}
       100% {max-height: ${MAX_CARD_WIDTH}em; max-width: ${MAX_CARD_WIDTH}em;}
+    }
+
+  @keyframes select-title
+    {
+      0%   {background: #e0f6f9;}
+      50%  {background: #e1ddf3;}
+      100% {background: #d2e4f9;}
     }
 
   </style>
