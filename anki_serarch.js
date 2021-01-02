@@ -105,8 +105,12 @@ class Card {
 
     get forntCard() {
         if (this._title === this.frontCardContent) {
-            let arrows = `<span style="padding-left: 4.5em">↓</span>`
-            return arrows + arrows + arrows + arrows
+            let arrow = `<span style="padding-left: 4.5em;">↓</span>`
+            let arrows = ''
+            for (let index = 0; index < 4; index++) {
+                arrows = arrows + arrow
+            }
+            return `<div style="text-align: center;">↓${arrows}</div>`
         }
         return this.frontCardContent
     }
