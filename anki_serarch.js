@@ -79,7 +79,6 @@ class Card {
         this.isExtend = null
         this.bodyDom = null
         this.titleDom = null
-        this.isPlaying = false
     }
 
     get title() {
@@ -188,7 +187,7 @@ class Card {
             : this.titleDom.classList.remove(selTitleClass)
     }
 
-    async setExtend(show) {
+    setExtend(show) {
         if (this.isExtend === show) {
             return
         } else {
@@ -288,7 +287,7 @@ class CardMgr {
 
     onCardClick(curCard) {
         this.cards.forEach( card => {
-            if(card !== curCard) {
+            if (card !== curCard) {
                 card.setExtend(false)
             }
         })
@@ -437,7 +436,6 @@ function clearContainer() {
 }
 
 
-
 // listen input
 function addInputEventListener(searchInput) {
     function onSearchTextInput(event) {
@@ -453,7 +451,6 @@ function addInputEventListener(searchInput) {
     let lastInputTs, searchText
     searchInput.addEventListener('input', onSearchTextInput)
 }
-
 
 
 async function main() {
