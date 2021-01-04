@@ -22,26 +22,15 @@
 如何使用 Tampermonkey?
 [用 Chrome 的人都需要知道的「神器」扩展：「油猴」使用详解](https://sspai.com/post/40485)
 
-#### 3、配置
-##### 3.1 卡片类型
-如果你是中文的Supermemo类型，则不用设置，否则搜索结果无法显示。
-![image](https://github.com/yekingyan/anki_search_on_web/raw/master/card-type.png)
 
-如果你的卡片类型字段不是"正面"、"反面"，请在脚本中修改
-```js
-// 卡页类型，正反面的名称
-// 默认supermemo不用设置
-// 目前只持支取两个字段
-const FRONT_CARCD_FILES = '' // 填入正面对应的字段
-const BACK_CARK_FILES = ''   // 填入背面对应的字段
-```
- 比如
-```js
-const FRONT_CARCD_FILES = 'Front'
-const BACK_CARK_FILES = 'Back' 
-```
+##### 2.1 Tampermonkey 添加本脚本
 
-##### 3.2 搜索范围
+#### 3、结束，Enjoy。
+    ps: 如果百度看不到卡片。F5刷新一下
+
+#### 4、可选配置(非必须)
+
+##### 4.1 搜索范围
 默认搜索全部（排除了'English'牌组）
 你可以在脚本中自定义修改，规则与客户端搜索一样
 
@@ -56,3 +45,13 @@ const SEARCH_FROM = ''
 ```js
 const SEARCH_FROM = 'deck:MyDecks'
 ```
+
+##### 4.2 卡片数量与大小
+
+// a maximun of cards
+const MAX_CARDS = 37
+
+// set card size
+const MIN_CARD_WIDTH = 30
+const MAX_CARD_WIDTH = 40
+const MAX_CARD_HEIGHT = 70
