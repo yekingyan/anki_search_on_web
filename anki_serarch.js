@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0
+// @version      1.0.1
 // version log   支持多种卡片模板了。去除了外部依赖，修复一些兼容性问题
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
@@ -29,7 +29,7 @@ const MAX_CARD_HEIGHT = 70
 // adaptor
 const HOST_MAP = new Map([
     ['local', ['#anki-q', '#anki-card']],
-    ['google', ['.gLFyf', '#rhs']],
+    ['google', ['input.gLFyf', '#rhs']],
     ['bing', ['#sb_form_q', '#b_context']],
     ['yahoo', ['#yschsp', '#right']],
     ['baidu', ['#kw', '#content_right']],
@@ -427,6 +427,9 @@ const getHostSearchInputAndTarget = () => {
 const CONTAINER_ID = 'anki-container'
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
 function insertContainet(targetDom) {
+    if (getContainer()) {
+        return
+    }
     targetDom.insertAdjacentHTML('afterbegin', CONTAINER)
 }
 
@@ -574,6 +577,27 @@ const style = `
     animation-timing-function: ease-in;
     animation-fill-mode:forwards;
     animation-direction: normal;
+  }
+
+  div#anki-container ul {
+    margin-bottom: 1em;
+    margin-left: 2em;
+  }
+
+  div#anki-container li {
+    list-style-type: disc;
+  }
+
+  div#anki-container ul{
+    list-style-type: disc;
+  }
+
+  div#anki-container ul ul{
+    list-style-type: circle;
+  }
+
+  div#anki-container ul ul ul{
+    list-style-type: square;
   }
 
   @keyframes collapsed
