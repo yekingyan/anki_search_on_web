@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.1
+// @version      1.0.2
 // version log   支持多种卡片模板了。去除了外部依赖，修复一些兼容性问题
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
@@ -411,6 +411,7 @@ const getHostSearchInputAndTarget = () => {
     let host = window.location.host || 'local'
     let searchInput = null  // 搜索框
     let targetDom = null    // 左边栏的父节点
+    removeReplaceTargetDom()
 
     for (let [key, value] of HOST_MAP) {
         if (host.includes(key)) {
@@ -419,8 +420,40 @@ const getHostSearchInputAndTarget = () => {
             break
         }
     }
+    if (!targetDom) {
+        targetDom = getOrCreateReplaceTargetDom()
+    }
 
     return [searchInput, targetDom]
+}
+
+
+const REPLACE_TARGET_ID = 'anki-replace-target'
+const REPLACE_TARGET = `<div id="${REPLACE_TARGET_ID}"><div>`
+function getReplaceTargetDom() {
+    return window.top.document.getElementById(REPLACE_TARGET_ID)
+}
+
+
+const createReplaceTargetDom = () => {
+    let targetDomParent = window.top.document.getElementById("rcnt")
+    targetDomParent.insertAdjacentHTML('afterbegin', REPLACE_TARGET)
+}
+
+
+const getOrCreateReplaceTargetDom = () => {
+    if (!getReplaceTargetDom()) {
+        createReplaceTargetDom()
+    }
+    return getReplaceTargetDom()
+}
+
+
+const removeReplaceTargetDom = () => {
+    if (!getReplaceTargetDom()) {
+        return
+    }
+    getReplaceTargetDom().innerHTML = ''
 }
 
 
@@ -461,6 +494,7 @@ function addInputEventListener(searchInput) {
 
 
 async function main() {
+    log('Anki Serarch Launching')
     // 注入css
     let headDom = window.top.document.getElementsByTagName("HEAD")[0]
     headDom.insertAdjacentHTML('beforeend', style)
@@ -599,6 +633,12 @@ const style = `
   div#anki-container ul ul ul{
     list-style-type: square;
   }
+
+  div#anki-replace-target {
+    float: right;
+    display: block;
+    position: relative;
+}
 
   @keyframes collapsed
     {
