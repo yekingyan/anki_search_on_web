@@ -63,6 +63,120 @@ g_counterReqText.next()
 g_counterReqSrc.next()
 
 
+class Singleton {
+    constructor() {
+        const instance = this.constructor.instance
+        if (instance) {
+            return instance
+        }
+        this.constructor.instance = this
+    }
+}
+
+
+// request and data
+class Api extends Singleton {
+    _commonData(action, params) {
+        /**
+         * 请求表单的共同数据结构
+         * action: str findNotes notesInfo
+         * params: dict
+         * return: dict
+         */    
+        return {
+            "action": action,
+            "version": 6,
+            "params": params
+        }
+    }
+
+    async _searchByText(searchText) {
+        /**
+         * 通过文本查卡片ID
+         */
+        let query = `${SEARCH_FROM} ${searchText}`
+        let data = this._commonData("findNotes", { "query": query })
+        try {
+            let response = await fetch(URL, {
+                method: "POST",
+                body: JSON.stringify(data)
+            })
+            g_counterReqText.next()
+            return await response.json()
+        } catch (error) {
+            console.log("Request searchByText Failed", error)
+        }
+    }
+
+    async _searchByID(ids) {
+        /**
+         * 通过卡片ID获取卡片内容
+         */
+        let data = this._commonData("notesInfo", { "notes": ids })
+        try {
+            let response = await fetch(URL, {
+                method: "POST",
+                body: JSON.stringify(data)
+            })
+            g_counterReqText.next()
+            return await response.json()
+        } catch (error) {
+            console.log("Request searchByID Failed", error)
+        }
+    }
+
+    async searchImg(filename) {
+        /**
+         * 搜索文件名 返回 资源的base64编码
+         * return base64 code
+         */
+        let data = this._commonData("retrieveMediaFile", { "filename": filename })
+        try {
+            let response = await fetch(URL, {
+                method: "POST",
+                body: JSON.stringify(data)
+            })
+            let res = await response.json()
+            g_counterReqSrc.next()
+            return res.result
+        } catch (error) {
+            log("Request searchImg Failed", error, filename)
+        }
+    }
+
+    formatBase64Img(base64) {
+        let src = `data:image/png;base64,${base64}`
+        return src
+    }
+
+    async searchImgBase64(filename) {
+        let res = await this.searchImg(filename)
+        let base64Img = this.formatBase64Img(res)
+        return base64Img
+    }
+
+    async search(searchText) {
+        /**
+         * 结合两次请求, 一次完整的搜索
+         * searchValue: 搜索框的内容
+         */
+        if (searchText.length === 0) {
+            return []
+        }
+        try {
+            let idRes = await this._searchByText(searchText)
+            let ids = idRes.result
+            ids.length >= MAX_CARDS ? ids.length = MAX_CARDS : null
+            let cardRes = await this._searchByID(ids)
+            let cards = cardRes.result
+            return cards
+        } catch (error) {
+            log("Request search Failed", error, searchText)
+        }
+    }
+}
+
+
 class Card {
     constructor(id, index, frontCardContent, backCardData, parent) {
         this.id = id
@@ -167,8 +281,7 @@ class Card {
 
         await Promise.all(srcsList.map(async (i) => {
             let filename = i.match(reFilename).groups.filename
-            let res = await searchImg(filename)
-            let base64Img = formatBase64Img(res)
+            let base64Img = await new Api().searchImgBase64(filename)
             let orgImg = `<img src="${filename}"`
             let replaceImg = `<img class="anki-img-width" src="${base64Img}"`
             temp = temp.replace(orgImg, replaceImg)
@@ -220,16 +333,10 @@ class Card {
 
     listenEvent() {
         this.titleDom = window.top.document.getElementById(`title-${this.id}`)
-        this.titleDom.addEventListener('click', () => {
-            this.onClick()
-        })
+        this.titleDom.addEventListener("click", () => this.onClick())
 
         this.bodyDom = window.top.document.getElementById(`body-${this.id}`)
-        this.bodyDom.addEventListener("animationend", () => {
-            if (this.isExtend) {
-                window.scroll(window.outerWidth, window.pageYOffset)
-            }
-        })
+        this.bodyDom.addEventListener("animationend", () => this.onAniEnd())
     }
 
     onClick() {
@@ -238,11 +345,18 @@ class Card {
         this.setExtend(show)
     }
 
+    onAniEnd() {
+        if (this.isExtend) {
+            window.scroll(window.outerWidth, window.pageYOffset)
+        }
+    }
+
 }
 
 
-class CardMgr {
+class CardMgr extends Singleton {
     constructor () {
+        super()
         this.cards = []
     }
 
@@ -276,7 +390,7 @@ class CardMgr {
     }
 
     async searchAndInsertCard(searchValue) {
-        let cardsData = await search(searchValue)
+        let cardsData = await new Api().search(searchValue)
         let cards = this.formatCardsData(cardsData)
         this.cards = cards
         await Promise.all(cards.map(async (card) => await card.requestCardSrc()))
@@ -296,109 +410,6 @@ class CardMgr {
         })
     }
 
-}
-
-
-let cardMgr = new CardMgr()
-
-
-// request and data
-const commonData = (action, params) => {
-    /**
-     * 请求表单的共同数据结构
-     * action: str findNotes notesInfo
-     * params: dict
-     * return: dict
-     */    
-    return {
-        "action": action,
-        "version": 6,
-        "params": params
-    }
-}
-
-
-async function _searchByText(searchText) {
-    /**
-     * 通过文本查卡片ID
-     */
-    let query = `${SEARCH_FROM} ${searchText}`
-    let data = commonData("findNotes", { "query": query })
-    try {
-        let response = await fetch(URL, {
-            method: "POST",
-            body: JSON.stringify(data)
-        })
-        g_counterReqText.next()
-        return await response.json()
-    } catch (error) {
-        console.log("Request searchByText Failed", error)
-    }
-}
-
-
-async function _searchByID(ids) {
-    /**
-     * 通过卡片ID获取卡片内容
-     */
-    let data = commonData("notesInfo", { "notes": ids })
-    try {
-        let response = await fetch(URL, {
-            method: "POST",
-            body: JSON.stringify(data)
-        })
-        g_counterReqText.next()
-        return await response.json()
-    } catch (error) {
-        console.log("Request searchByID Failed", error)
-    }
-}
-
-
-function formatBase64Img(base64) {
-    let src = `data:image/png;base64,${base64}`
-    return src
-}
-
-
-async function searchImg(filename) {
-    /**
-     * 搜索文件名 返回 资源的base64编码
-     * return base64 code
-     */
-    let data = commonData("retrieveMediaFile", { "filename": filename })
-    try {
-        let response = await fetch(URL, {
-            method: "POST",
-            body: JSON.stringify(data)
-        })
-        res = await response.json()
-        g_counterReqSrc.next()
-        return res.result
-    } catch (error) {
-        log("Request searchImg Failed", error, filename)
-    }
-}
-
-
-async function search(searchText) {
-    /**
-     * 结合两次请求, 一次完整的搜索
-     * searchValue: 搜索框的内容
-     */
-    if (searchText.length === 0) {
-        return []
-    }
-    try {
-        let idRes = await _searchByText(searchText)
-        ids = idRes.result
-        ids.length >= MAX_CARDS ? ids.length = MAX_CARDS : null
-        let cardRes = await _searchByID(ids)
-        cards = cardRes.result
-        return cards
-    } catch (error) {
-        log("Request search Failed", error, searchText)
-    }
 }
 
 
@@ -482,7 +493,7 @@ function addInputEventListener(searchInput) {
         searchText = event.srcElement.value
         setTimeout(() => {
             if (event.timeStamp === lastInputTs) {
-                cardMgr.searchAndInsertCard(searchText)
+                new CardMgr().searchAndInsertCard(searchText)
             }
         }, 700)
 
@@ -514,7 +525,7 @@ async function main() {
 
     // 刷新，搜索一次
     let searchText = searchInput.value
-    cardMgr.searchAndInsertCard(searchText)
+    new CardMgr().searchAndInsertCard(searchText)
 }
 
 
