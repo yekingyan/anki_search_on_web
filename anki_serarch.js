@@ -17,29 +17,28 @@
 // @grant        unsafeWindow
 // ==/UserScript==
 
-const URL = 'http://127.0.0.1:8765'
-const SEARCH_FROM = '-deck:English'
+const URL = "http://127.0.0.1:8765"
+const SEARCH_FROM = "-deck:English"
 const MAX_CARDS = 37
 
 // set card size
 const MIN_CARD_WIDTH = 30
 const MAX_CARD_WIDTH = 40
 const MAX_CARD_HEIGHT = 70
+const MAX_IMG_WIDTH = MAX_CARD_WIDTH - 3
 
 // adaptor
 const HOST_MAP = new Map([
-    ['local', ['#anki-q', '#anki-card']],
-    ['google', ['input.gLFyf', '#rhs']],
-    ['bing', ['#sb_form_q', '#b_context']],
-    ['yahoo', ['#yschsp', '#right']],
-    ['baidu', ['#kw', '#content_right']],
-    ['anki', ['.form-control', '#content_right']],
-    ['mijisou', ['#q', '#sidebar_results']],
-    // ['duckduckgo', ['#search_form_input', '.results--sidebar']],
+    ["local", ["#anki-q", "#anki-card"]],
+    ["google", ["input.gLFyf", "#rhs"]],
+    ["bing", ["#sb_form_q", "#b_context"]],
+    ["yahoo", ["#yschsp", "#right"]],
+    ["baidu", ["#kw", "#content_right"]],
+    ["anki", [".form-control", "#content_right"]],
+    ["mijisou", ["#q", "#sidebar_results"]],
+    // ["duckduckgo", ["#search_form_input", ".results--sidebar"]],
 ])
 
-
-const MAX_IMG_WIDTH = MAX_CARD_WIDTH - 3
 
 // utils
 const log = function () {
@@ -82,31 +81,31 @@ class Card {
     }
 
     get title() {
-        let title = ''
+        let title = ""
         let parseTitle = this.frontCardContent.split(/<div.*?>/)
         let blankHead = parseTitle[0].split(/\s+/)
         //有div的情况
-        if (this.frontCardContent.includes('</div>')) {
+        if (this.frontCardContent.includes("</div>")) {
             // 第一个div之前不是全部都是空白，就是标题
-            if (!/^\s+$/.test(blankHead[0]) && blankHead[0] !== '') {
+            if (!/^\s+$/.test(blankHead[0]) && blankHead[0] !== "") {
                 title = blankHead
             } else {
                 // 标题是第一个div标签的内容
-                title = parseTitle[1].split('</div>')[0]
+                title = parseTitle[1].split("</div>")[0]
             }
         } else {
             //没有div的情况
             title = this.frontCardContent
         }
         this._title = title
-        title = this.index + '、' + title
+        title = this.index + "、" + title
         return title
     }
 
     get forntCard() {
         if (this._title === this.frontCardContent) {
             let arrow = `<span style="padding-left: 4.5em;">↓</span>`
-            let arrows = ''
+            let arrows = ""
             for (let index = 0; index < 4; index++) {
                 arrows = arrows + arrow
             }
@@ -116,7 +115,7 @@ class Card {
     }
 
     get backCard() {
-        let back = ''
+        let back = ""
         if (this.backCardData.length <= 1) {
             back += this.backCardData[0][2]
         } else {
@@ -185,7 +184,7 @@ class Card {
     }
 
     showSelTitleClass(show) {
-        let selTitleClass = 'anki-title-sel'
+        let selTitleClass = "anki-title-sel"
         show 
             ? this.titleDom.classList.add(selTitleClass)
             : this.titleDom.classList.remove(selTitleClass)
@@ -195,8 +194,8 @@ class Card {
         if (this.isExtend === show) {
             return
         } else {
-            let hideClass = 'anki-collapsed'
-            let showClass = 'anki-extend'
+            let hideClass = "anki-collapsed"
+            let showClass = "anki-extend"
             if (show) {
                 this.bodyDom.classList.add(showClass)
                 this.bodyDom.classList.remove(hideClass)
@@ -270,7 +269,7 @@ class CardMgr {
     insertCardsDom(cards) {
         clearContainer()
         cards.forEach(card => {
-            getContainer().insertAdjacentHTML('beforeend', card.cardHTML)
+            getContainer().insertAdjacentHTML("beforeend", card.cardHTML)
             card.listenEvent()
             card.tryCollapse()
         })
@@ -324,16 +323,16 @@ async function _searchByText(searchText) {
      * 通过文本查卡片ID
      */
     let query = `${SEARCH_FROM} ${searchText}`
-    let data = commonData('findNotes', { 'query': query })
+    let data = commonData("findNotes", { "query": query })
     try {
         let response = await fetch(URL, {
-            method: 'POST',
+            method: "POST",
             body: JSON.stringify(data)
         })
         g_counterReqText.next()
         return await response.json()
     } catch (error) {
-        console.log('Request searchByText Failed', error)
+        console.log("Request searchByText Failed", error)
     }
 }
 
@@ -342,16 +341,16 @@ async function _searchByID(ids) {
     /**
      * 通过卡片ID获取卡片内容
      */
-    let data = commonData('notesInfo', { 'notes': ids })
+    let data = commonData("notesInfo", { "notes": ids })
     try {
         let response = await fetch(URL, {
-            method: 'POST',
+            method: "POST",
             body: JSON.stringify(data)
         })
         g_counterReqText.next()
         return await response.json()
     } catch (error) {
-        console.log('Request searchByID Failed', error)
+        console.log("Request searchByID Failed", error)
     }
 }
 
@@ -367,17 +366,17 @@ async function searchImg(filename) {
      * 搜索文件名 返回 资源的base64编码
      * return base64 code
      */
-    let data = commonData('retrieveMediaFile', { 'filename': filename })
+    let data = commonData("retrieveMediaFile", { "filename": filename })
     try {
         let response = await fetch(URL, {
-            method: 'POST',
+            method: "POST",
             body: JSON.stringify(data)
         })
         res = await response.json()
         g_counterReqSrc.next()
         return res.result
     } catch (error) {
-        log('Request searchImg Failed', error, filename)
+        log("Request searchImg Failed", error, filename)
     }
 }
 
@@ -398,7 +397,7 @@ async function search(searchText) {
         cards = cardRes.result
         return cards
     } catch (error) {
-        log('Request search Failed', error, searchText)
+        log("Request search Failed", error, searchText)
     }
 }
 
@@ -408,7 +407,7 @@ const getHostSearchInputAndTarget = () => {
     /**
      * 获取当前网站的搜索输入框 与 需要插入的位置
      *  */
-    let host = window.location.host || 'local'
+    let host = window.location.host || "local"
     let searchInput = null  // 搜索框
     let targetDom = null    // 左边栏的父节点
     removeReplaceTargetDom()
@@ -428,7 +427,7 @@ const getHostSearchInputAndTarget = () => {
 }
 
 
-const REPLACE_TARGET_ID = 'anki-replace-target'
+const REPLACE_TARGET_ID = "anki-replace-target"
 const REPLACE_TARGET = `<div id="${REPLACE_TARGET_ID}"><div>`
 function getReplaceTargetDom() {
     return window.top.document.getElementById(REPLACE_TARGET_ID)
@@ -437,7 +436,7 @@ function getReplaceTargetDom() {
 
 const createReplaceTargetDom = () => {
     let targetDomParent = window.top.document.getElementById("rcnt")
-    targetDomParent.insertAdjacentHTML('afterbegin', REPLACE_TARGET)
+    targetDomParent.insertAdjacentHTML("afterbegin", REPLACE_TARGET)
 }
 
 
@@ -453,17 +452,17 @@ const removeReplaceTargetDom = () => {
     if (!getReplaceTargetDom()) {
         return
     }
-    getReplaceTargetDom().innerHTML = ''
+    getReplaceTargetDom().remove()
 }
 
 
-const CONTAINER_ID = 'anki-container'
+const CONTAINER_ID = "anki-container"
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
 function insertContainet(targetDom) {
     if (getContainer()) {
         return
     }
-    targetDom.insertAdjacentHTML('afterbegin', CONTAINER)
+    targetDom.insertAdjacentHTML("afterbegin", CONTAINER)
 }
 
 
@@ -472,7 +471,7 @@ function getContainer() {
 }
 
 function clearContainer() {
-    getContainer().innerHTML = ''
+    getContainer().innerHTML = ""
 }
 
 
@@ -489,24 +488,24 @@ function addInputEventListener(searchInput) {
 
     }
     let lastInputTs, searchText
-    searchInput.addEventListener('input', onSearchTextInput)
+    searchInput.addEventListener("input", onSearchTextInput)
 }
 
 
 async function main() {
-    log('Anki Serarch Launching')
+    log("Anki Serarch Launching")
     // 注入css
     let headDom = window.top.document.getElementsByTagName("HEAD")[0]
-    headDom.insertAdjacentHTML('beforeend', style)
+    headDom.insertAdjacentHTML("beforeend", style)
 
     // 获取输入框 与 容器挂载点
     let [searchInput, targetDom] = getHostSearchInputAndTarget()
     if (!searchInput) {
-        log('在页面没有找到搜索框', searchInput)
+        log("在页面没有找到搜索框", searchInput)
         return
     }
     if (!targetDom) {
-        log('在页面没有找到可依附的元素', targetDom)
+        log("在页面没有找到可依附的元素", targetDom)
         return
     }
 
