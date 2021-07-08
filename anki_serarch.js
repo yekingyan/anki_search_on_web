@@ -39,9 +39,11 @@ const HOST_MAP = new Map([
     // ["duckduckgo", ["#search_form_input", ".results--sidebar"]],
 ])
 
+const INPUT_WAIT_MS = 700
+
 
 // utils
-const log = function () {
+function log() {
     console.log.apply(console, arguments)
 }
 
@@ -75,8 +77,8 @@ class Singleton {
 
 
 // request and data
-class Api extends Singleton {
-    _commonData(action, params) {
+class Api{
+    static _commonData(action, params) {
         /**
          * 请求表单的共同数据结构
          * action: str findNotes notesInfo
@@ -90,7 +92,7 @@ class Api extends Singleton {
         }
     }
 
-    async _searchByText(searchText) {
+    static async _searchByText(searchText) {
         /**
          * 通过文本查卡片ID
          */
@@ -108,7 +110,7 @@ class Api extends Singleton {
         }
     }
 
-    async _searchByID(ids) {
+    static async _searchByID(ids) {
         /**
          * 通过卡片ID获取卡片内容
          */
@@ -125,7 +127,7 @@ class Api extends Singleton {
         }
     }
 
-    async searchImg(filename) {
+    static async searchImg(filename) {
         /**
          * 搜索文件名 返回 资源的base64编码
          * return base64 code
@@ -144,18 +146,18 @@ class Api extends Singleton {
         }
     }
 
-    formatBase64Img(base64) {
+    static formatBase64Img(base64) {
         let src = `data:image/png;base64,${base64}`
         return src
     }
 
-    async searchImgBase64(filename) {
+    static async searchImgBase64(filename) {
         let res = await this.searchImg(filename)
         let base64Img = this.formatBase64Img(res)
         return base64Img
     }
 
-    async search(searchText) {
+    static async search(searchText) {
         /**
          * 结合两次请求, 一次完整的搜索
          * searchValue: 搜索框的内容
@@ -281,7 +283,7 @@ class Card {
 
         await Promise.all(srcsList.map(async (i) => {
             let filename = i.match(reFilename).groups.filename
-            let base64Img = await new Api().searchImgBase64(filename)
+            let base64Img = await Api.searchImgBase64(filename)
             let orgImg = `<img src="${filename}"`
             let replaceImg = `<img class="anki-img-width" src="${base64Img}"`
             temp = temp.replace(orgImg, replaceImg)
@@ -351,6 +353,11 @@ class Card {
         }
     }
 
+    onInsert() {
+        this.listenEvent()
+        this.tryCollapse()
+    }
+
 }
 
 
@@ -381,16 +388,15 @@ class CardMgr extends Singleton {
     }
 
     insertCardsDom(cards) {
-        clearContainer()
+        DomOper.clearContainer()
         cards.forEach(card => {
-            getContainer().insertAdjacentHTML("beforeend", card.cardHTML)
-            card.listenEvent()
-            card.tryCollapse()
+            DomOper.getContainer().insertAdjacentHTML("beforeend", card.cardHTML)
+            card.onInsert()
         })
     }
 
     async searchAndInsertCard(searchValue) {
-        let cardsData = await new Api().search(searchValue)
+        let cardsData = await Api.search(searchValue)
         let cards = this.formatCardsData(cardsData)
         this.cards = cards
         await Promise.all(cards.map(async (card) => await card.requestCardSrc()))
@@ -414,92 +420,98 @@ class CardMgr extends Singleton {
 
 
 // dom
-const getHostSearchInputAndTarget = () => {
-    /**
-     * 获取当前网站的搜索输入框 与 需要插入的位置
-     *  */
-    let host = window.location.host || "local"
-    let searchInput = null  // 搜索框
-    let targetDom = null    // 左边栏的父节点
-    removeReplaceTargetDom()
-
-    for (let [key, value] of HOST_MAP) {
-        if (host.includes(key)) {
-            searchInput = window.top.document.querySelector(value[0])
-            targetDom = window.top.document.querySelector(value[1])
-            break
-        }
-    }
-    if (!targetDom) {
-        targetDom = getOrCreateReplaceTargetDom()
-    }
-
-    return [searchInput, targetDom]
-}
-
-
 const REPLACE_TARGET_ID = "anki-replace-target"
 const REPLACE_TARGET = `<div id="${REPLACE_TARGET_ID}"><div>`
-function getReplaceTargetDom() {
-    return window.top.document.getElementById(REPLACE_TARGET_ID)
-}
-
-
-const createReplaceTargetDom = () => {
-    let targetDomParent = window.top.document.getElementById("rcnt")
-    targetDomParent.insertAdjacentHTML("afterbegin", REPLACE_TARGET)
-}
-
-
-const getOrCreateReplaceTargetDom = () => {
-    if (!getReplaceTargetDom()) {
-        createReplaceTargetDom()
-    }
-    return getReplaceTargetDom()
-}
-
-
-const removeReplaceTargetDom = () => {
-    if (!getReplaceTargetDom()) {
-        return
-    }
-    getReplaceTargetDom().remove()
-}
-
 
 const CONTAINER_ID = "anki-container"
 const CONTAINER = `<div id="${CONTAINER_ID}"><div>`
-function insertContainet(targetDom) {
-    if (getContainer()) {
-        return
-    }
-    targetDom.insertAdjacentHTML("afterbegin", CONTAINER)
-}
 
+class DomOper {
+    static getHostSearchInputAndTarget() {
+        /**
+         * 获取当前网站的搜索输入框 与 需要插入的位置
+         *  */
+        let host = window.location.host || "local"
+        let searchInput = null  // 搜索框
+        let targetDom = null    // 左边栏的父节点
+        this.removeReplaceTargetDom()
 
-function getContainer() {
-    return window.top.document.getElementById(CONTAINER_ID)
-}
-
-function clearContainer() {
-    getContainer().innerHTML = ""
-}
-
-
-// listen input
-function addInputEventListener(searchInput) {
-    function onSearchTextInput(event) {
-        lastInputTs = event.timeStamp
-        searchText = event.srcElement.value
-        setTimeout(() => {
-            if (event.timeStamp === lastInputTs) {
-                new CardMgr().searchAndInsertCard(searchText)
+        for (let [key, value] of HOST_MAP) {
+            if (host.includes(key)) {
+                searchInput = window.top.document.querySelector(value[0])
+                targetDom = window.top.document.querySelector(value[1])
+                break
             }
-        }, 700)
+        }
+        if (!targetDom) {
+            targetDom = this.getOrCreateReplaceTargetDom()
+        }
 
+        return [searchInput, targetDom]
     }
-    let lastInputTs, searchText
-    searchInput.addEventListener("input", onSearchTextInput)
+
+    // listen input
+    static addInputEventListener(searchInput) {
+        function onSearchTextInput(event) {
+            lastInputTs = event.timeStamp
+            searchText = event.srcElement.value
+            setTimeout(() => {
+                if (event.timeStamp === lastInputTs) {
+                    new CardMgr().searchAndInsertCard(searchText)
+                }
+            }, INPUT_WAIT_MS)
+        }
+        let lastInputTs, searchText
+        searchInput.addEventListener("input", onSearchTextInput)
+    }
+
+    static getReplaceTargetDom() {
+        return window.top.document.getElementById(REPLACE_TARGET_ID)
+    }
+
+    static createReplaceTargetDom() {
+        let targetDomParent = window.top.document.getElementById("rcnt")
+        if (targetDomParent) {
+            targetDomParent.insertAdjacentHTML("afterbegin", REPLACE_TARGET)
+        }
+    }
+
+    static getOrCreateReplaceTargetDom() {
+        if (!this.getReplaceTargetDom()) {
+            this.createReplaceTargetDom()
+        }
+        return this.getReplaceTargetDom()
+    }
+
+    static removeReplaceTargetDom () {
+        if (!this.getReplaceTargetDom()) {
+            return
+        }
+        this.getReplaceTargetDom().remove()
+    }
+
+    static insertContainet(targetDom) {
+        if (this.getContainer()) {
+            return
+        }
+        targetDom.insertAdjacentHTML("afterbegin", CONTAINER)
+    }
+
+    static getContainer() {
+        return window.top.document.getElementById(CONTAINER_ID)
+    }
+
+    static clearContainer() {
+        this.getContainer().innerHTML = ""
+    }
+
+    static replaceImgHTML(html, filename, base64Img) {
+        let orgImg = `<img src="${filename}"`
+        let replaceImg = `<img class="anki-img-width" src="${base64Img}"`
+        html = html.replace(orgImg, replaceImg)
+        return html
+    }
+
 }
 
 
@@ -510,7 +522,7 @@ async function main() {
     headDom.insertAdjacentHTML("beforeend", style)
 
     // 获取输入框 与 容器挂载点
-    let [searchInput, targetDom] = getHostSearchInputAndTarget()
+    let [searchInput, targetDom] = DomOper.getHostSearchInputAndTarget()
     if (!searchInput) {
         log("在页面没有找到搜索框", searchInput)
         return
@@ -520,8 +532,8 @@ async function main() {
         return
     }
 
-    insertContainet(targetDom)
-    addInputEventListener(searchInput)
+    DomOper.insertContainet(targetDom)
+    DomOper.addInputEventListener(searchInput)
 
     // 刷新，搜索一次
     let searchText = searchInput.value
