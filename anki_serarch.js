@@ -84,7 +84,7 @@ class Api{
          * action: str findNotes notesInfo
          * params: dict
          * return: dict
-         */    
+         */
         return {
             "action": action,
             "version": 6,
