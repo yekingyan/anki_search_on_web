@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.2
-// version log   兼容google有些搜索结果没有右边栏导致卡片不显示
+// @version      1.0.3
+// version log   兼容google css 变化
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -472,7 +472,8 @@ class DomOper {
     static createReplaceTargetDom() {
         let targetDomParent = window.top.document.getElementById("rcnt")
         if (targetDomParent) {
-            targetDomParent.insertAdjacentHTML("afterbegin", REPLACE_TARGET)
+            targetDomParent.style["max-width"] = "100%"
+            targetDomParent.insertAdjacentHTML("beforeend", REPLACE_TARGET)
         }
     }
 
