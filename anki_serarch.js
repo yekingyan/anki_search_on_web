@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.3
-// version log   兼容google css 变化
+// @version      1.0.4
+// @version log   兼容google css 变化
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -471,8 +471,14 @@ class DomOper {
 
     static createReplaceTargetDom() {
         let targetDomParent = window.top.document.getElementById("rcnt")
+        const innerStyle = {
+            "max-width": "100%",
+            "flex-wrap": "unset", 
+        }
         if (targetDomParent) {
-            targetDomParent.style["max-width"] = "100%"
+            for (const [key, value] of Object.entries(innerStyle)) {
+                targetDomParent.style[key] = value
+            }
             targetDomParent.insertAdjacentHTML("beforeend", REPLACE_TARGET)
         }
     }
