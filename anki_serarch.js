@@ -1,8 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.4
-// @version log   兼容google css 变化
+// @version      1.0.5
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -16,6 +15,13 @@
 // @include      *://ankiweb.net/*
 // @grant        unsafeWindow
 // ==/UserScript==
+
+/**
+ * version change
+ *   - adopt google css
+ *   - fix baidu first search
+ *   - fix google dark mode
+ */
 
 const URL = "http://127.0.0.1:8765"
 const SEARCH_FROM = "-deck:English"
@@ -388,6 +394,9 @@ class CardMgr extends Singleton {
     }
 
     insertCardsDom(cards) {
+        if (!DomOper.getContainer()) {
+            return
+        }
         DomOper.clearContainer()
         cards.forEach(card => {
             DomOper.getContainer().insertAdjacentHTML("beforeend", card.cardHTML)
@@ -396,6 +405,10 @@ class CardMgr extends Singleton {
     }
 
     async searchAndInsertCard(searchValue) {
+        DomOper.insertContainerOnce()
+        if (!DomOper.getContainer()) {
+            return
+        }
         let cardsData = await Api.search(searchValue)
         let cards = this.formatCardsData(cardsData)
         this.cards = cards
@@ -471,14 +484,7 @@ class DomOper {
 
     static createReplaceTargetDom() {
         let targetDomParent = window.top.document.getElementById("rcnt")
-        const innerStyle = {
-            "max-width": "100%",
-            "flex-wrap": "unset", 
-        }
         if (targetDomParent) {
-            for (const [key, value] of Object.entries(innerStyle)) {
-                targetDomParent.style[key] = value
-            }
             targetDomParent.insertAdjacentHTML("beforeend", REPLACE_TARGET)
         }
     }
@@ -497,11 +503,22 @@ class DomOper {
         this.getReplaceTargetDom().remove()
     }
 
-    static insertContainet(targetDom) {
+    static insertCssStyle() {
+        let headDom = window.top.document.getElementsByTagName("HEAD")[0]
+        headDom.insertAdjacentHTML("beforeend", style)
+    }
+
+    static insertContainerOnce(targetDom) {
         if (this.getContainer()) {
             return
         }
+        targetDom = targetDom ? targetDom : this.getHostSearchInputAndTarget()[1]
+        if (!targetDom) {
+            log("AKS can't insert cards container", targetDom)
+            return
+        }
         targetDom.insertAdjacentHTML("afterbegin", CONTAINER)
+        this.insertCssStyle()
     }
 
     static getContainer() {
@@ -524,25 +541,14 @@ class DomOper {
 
 async function main() {
     log("Anki Serarch Launching")
-    // 注入css
-    let headDom = window.top.document.getElementsByTagName("HEAD")[0]
-    headDom.insertAdjacentHTML("beforeend", style)
-
-    // 获取输入框 与 容器挂载点
     let [searchInput, targetDom] = DomOper.getHostSearchInputAndTarget()
     if (!searchInput) {
-        log("在页面没有找到搜索框", searchInput)
+        log("AKS can't find search input", searchInput)
         return
     }
-    if (!targetDom) {
-        log("在页面没有找到可依附的元素", targetDom)
-        return
-    }
-
-    DomOper.insertContainet(targetDom)
     DomOper.addInputEventListener(searchInput)
+    DomOper.insertContainerOnce(targetDom)
 
-    // 刷新，搜索一次
     let searchText = searchInput.value
     new CardMgr().searchAndInsertCard(searchText)
 }
@@ -590,6 +596,7 @@ const style = `
     padding: .75em;
     margin: 0em;
     font-weight: 700;
+    color: black;
     background-color: #e0f6f9;
     // border-radius: calc(.5em - 1px);
     border-radius: .7em;
@@ -647,23 +654,30 @@ const style = `
     margin-left: 2em;
   }
 
-  div#anki-container li {
+  div#anki-container ol {
+    margin-bottom: 1em;
+    margin-left: 2em;
+  }
+
+  div#anki-container ul li{
     list-style-type: disc;
   }
 
-  div#anki-container ul{
-    list-style-type: disc;
-  }
-
-  div#anki-container ul ul{
+  div#anki-container ul ul li{
     list-style-type: circle;
   }
 
-  div#anki-container ul ul ul{
+  div#anki-container ul ul ul li{
     list-style-type: square;
   }
 
+  div#anki-container ul ul ul ul li{
+    list-style-type: circle;
+  }
+
   div#anki-replace-target {
+    margin-left: 2em;
+    width: 0em;
     float: right;
     display: block;
     position: relative;
