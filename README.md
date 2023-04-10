@@ -2,9 +2,11 @@
 
 在网页上同步搜索本地的的Anki数据
 
+https://github.com/yekingyan/anki_search_on_web
+
 ---
 
-## 效果展示(目前适配google、 bing、yahoo、百度)
+## 效果展示(目前适配google、bing、yahoo、百度)
 
 ![image](https://github.com/yekingyan/anki_search_on_web/raw/master/display.gif)
 
@@ -32,7 +34,8 @@
 
 ## 结束，Enjoy
 
-ps: 如果百度看不到卡片。F5刷新一下
+ps: 如果百度看不到卡片。F5刷新一下。或者用Bing
+ps: 由于本人主要使用Google，其他搜索引擎的适配可能不太完善。欢迎提merge request
 
 ---
 

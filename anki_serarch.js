@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.5
+// @version      1.0.6
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -18,9 +18,7 @@
 
 /**
  * version change
- *   - adopt google css
- *   - fix baidu first search
- *   - fix google dark mode
+ *   - add highlight.js css
  */
 
 const URL = "http://127.0.0.1:8765"
@@ -702,5 +700,66 @@ const style = `
       100% {background: #d2e4f9;}
     }
 
+  /**
+   * hljs css
+   */
+  pre code.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 1em
+  }
+  
+  code.hljs {
+    padding: 3px 5px
+  }
+  
+  .hljs {
+    color: #e0e2e4;
+    background: #282b2e
+  }
+  
+  .hljs-keyword, .hljs-literal, .hljs-selector-id, .hljs-selector-tag {
+    color: #93c763
+  }
+  
+  .hljs-number {
+    color: #ffcd22
+  }
+  
+  .hljs-attribute {
+    color: #668bb0
+  }
+  
+  .hljs-link, .hljs-regexp {
+    color: #d39745
+  }
+  
+  .hljs-meta {
+    color: #557182
+  }
+  
+  .hljs-addition, .hljs-built_in, .hljs-bullet, .hljs-emphasis, .hljs-name, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-subst, .hljs-tag, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable {
+    color: #8cbbad
+  }
+  
+  .hljs-string, .hljs-symbol {
+    color: #ec7600
+  }
+  
+  .hljs-comment, .hljs-deletion, .hljs-quote {
+    color: #818e96
+  }
+  
+  .hljs-selector-class {
+    color: #a082bd
+  }
+  
+  .hljs-doctag, .hljs-keyword, .hljs-literal, .hljs-name, .hljs-section, .hljs-selector-tag, .hljs-strong, .hljs-title, .hljs-type {
+    font-weight: 700
+  }
+  
+  .hljs-class .hljs-title, .hljs-code, .hljs-section, .hljs-title.class_ {
+    color: #fff
+  }
   </style>
 `
