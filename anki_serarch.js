@@ -481,7 +481,7 @@ class DomOper {
     }
 
     static createReplaceTargetDom() {
-        let targetDomParent = window.top.document.getElementById("rcnt")
+        let targetDomParent = window.top.document.getElementById("w7tRq")
         if (targetDomParent) {
             targetDomParent.insertAdjacentHTML("beforeend", REPLACE_TARGET)
         }
