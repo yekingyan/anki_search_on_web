@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anki_Search
 // @namespace    https://github.com/yekingyan/anki_search_on_web/
-// @version      1.0.7
+// @version      1.0.8
 // @description  同步搜索Anki上的内容，支持google、bing、yahoo、百度。依赖AnkiConnect（插件：2055492159）
 // @author       Yekingyan
 // @run-at       document-start
@@ -18,7 +18,7 @@
 
 /**
  * version change
- *  - fix google search
+ *  - fix replace target width
  */
 
 const URL = "http://127.0.0.1:8765"
@@ -481,7 +481,7 @@ class DomOper {
     }
 
     static createReplaceTargetDom() {
-        let targetDomParent = window.top.document.getElementById("w7tRq")
+        let targetDomParent = window.top.document.getElementById("rcnt")
         if (targetDomParent) {
             targetDomParent.insertAdjacentHTML("beforeend", REPLACE_TARGET)
         }
@@ -675,7 +675,8 @@ const style = `
 
   div#anki-replace-target {
     margin-left: 2em;
-    width: 0em;
+    width: ${MIN_CARD_WIDTH}em;
+    max-width: ${MAX_CARD_WIDTH}em;
     float: right;
     display: block;
     position: relative;
